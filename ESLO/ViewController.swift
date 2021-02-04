@@ -13,15 +13,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     @IBOutlet weak var chartViewEEG: LineChartView!
     @IBOutlet weak var chartViewAxy: LineChartView!
-    @IBOutlet weak var txtTextBox: UITextField!
     @IBOutlet weak var Header: UIView!
-    @IBOutlet weak var ChartButton: UIButton!
     @IBOutlet weak var DeviceLabel: UILabel!
     @IBOutlet weak var batteryPercentLabel: UILabel!
     @IBOutlet weak var DeviceView: UIView!
     @IBOutlet weak var LED0Switch: UISwitch!
     @IBOutlet weak var ConnectBtn: UIButton!
     @IBOutlet weak var RSSILabel: UILabel!
+    @IBOutlet weak var BatteryBar: UIProgressView!
+    @IBOutlet weak var ESLOTerminal: UITextView!
     
     // Characteristics
     private var redChar: CBCharacteristic?
@@ -31,6 +31,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var timeoutTimer = Timer()
     var RSSITimer = Timer()
     var RSSI: NSNumber = 0
+    var terminalCount: Int = 0
     
     // Properties
     private var centralManager: CBCentralManager!
@@ -47,6 +48,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         Header.setTwoGradient(colorOne: UIColor.purple, colorTwo: UIColor.blue)
         updateGraph()
         centralManager = CBCentralManager(delegate: self, queue: nil)
+        printESLO(text: "ESLO Initialized...")
+    }
+    
+    func printESLO(text: String) {
+        let formatString = NSLocalizedString("%03i", comment: "terminal")
+        ESLOTerminal.text = String(format: formatString, terminalCount) + ">> " + text + "\n" + ESLOTerminal.text
+        terminalCount += 1
     }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
@@ -66,6 +74,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             print("Central is not powered on")
         } else {
             print("Central scanning for", ESLOPeripheral.LEDServiceUUID);
+            printESLO(text: "Scanning for services")
             scanBTE()
         }
     }
@@ -125,9 +134,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
 //            }
             peripheral.discoverServices([ESLOPeripheral.LEDServiceUUID,ESLOPeripheral.batteryServiceUUID]);
             print("Connected to ESLO")
+            printESLO(text: "Connected to ESLO device")
         }
     }
     
+    // disconnected
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         if peripheral == self.peripheral {
             stopReadRSSI()
@@ -137,10 +148,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             LED0Switch.isEnabled = false
             self.peripheral = nil
             print("Disconnected")
+            printESLO(text: "Disconnected")
         }
     }
     
-    // Handles discovery event
+    // discovery event
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let services = peripheral.services {
             for service in services {
@@ -158,6 +170,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // attempt made to notify
+    // TI: DataService_SetParameter(DS_STREAM_ID, pCharData->dataLen, &pCharData->data);
     func peripheral(_ peripheral: CBPeripheral,
                     didUpdateNotificationStateFor characteristic: CBCharacteristic,
                     error: Error?) {
@@ -169,25 +182,37 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     // notification recieved
-    func peripheral(_ peripheral: CBPeripheral,
-                    didUpdateValueFor characteristic: CBCharacteristic,
+    func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic,
                     error: Error?) {
         if( characteristic == battChar ) {
-            print("Battery:", characteristic.value![0])
-            batteryPercentLabel.text = "\(characteristic.value![0])%"
+            let data:Data = characteristic.value! //get a data object from the CBCharacteristic
+            // same method call, without type annotations
+            let _ = data.withUnsafeBytes { pointer in
+                let vBatt = Float(pointer.load(as: Int32.self)) / 1000000
+                let formatString = NSLocalizedString("%1.2fV", comment: "vBatt")
+                if vBatt > 2.0 && vBatt < 4.0 {
+                    batteryPercentLabel.text = String(format: formatString, vBatt)
+                    BatteryBar.progress = vBatt.converting(from: 2.5...3.0, to: 0.0...1.0) // 350
+                }
+            }
         }
+        updateGraph()
     }
     
     // Handling discovery of characteristics
+    // manually via peripheral.readValueForCharacteristic(characteristic)
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         if let characteristics = service.characteristics {
             for characteristic in characteristics {
                 if characteristic.uuid == ESLOPeripheral.redLEDCharacteristicUUID {
                     print("Red LED characteristic found")
+                    printESLO(text: "Found red LED")
                     // Set the characteristic
                     redChar = characteristic
+                    LED0Switch.isOn = redChar?.value![0] == 0x01 ?  true : false
                 } else if characteristic.uuid == ESLOPeripheral.batteryCharacteristicUUID {
                     print("Battery characteristic found");
+                    printESLO(text: "Found battery")
                     // Set the char
                     battChar = characteristic
                     // Subscribe to the char.
@@ -209,6 +234,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func cancelScan() {
         centralManager?.stopScan()
         print("Scan Stopped")
+        printESLO(text: "Scan stopped")
         DeviceLabel.text = "Scan Timeout"
     }
     
@@ -220,14 +246,26 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     // see Write functions in UART module for reference
     private func writeValueToChar( withCharacteristic characteristic: CBCharacteristic, withValue value: Data) {
         // Check if it has the write property
-        if characteristic.properties.contains(.writeWithoutResponse) && peripheral != nil {
-            peripheral.writeValue(value, for: characteristic, type: .withoutResponse)
+        // characteristic.properties.contains(.writeWithoutResponse) &&
+        if peripheral != nil {
+            peripheral.writeValue(value, for: characteristic, type: .withResponse) //CBCharacteristicWriteType.WithResponse
         }
     }
     
+    func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic,
+                    error: Error?) {
+        if error != nil {
+            // not sure what to do here: Discover Services -> Discover Characteristics -> Updates GUI
+            peripheral.discoverServices([ESLOPeripheral.LEDServiceUUID,ESLOPeripheral.batteryServiceUUID]);
+            return
+        }
+        print("didWrite!")
+    }
+    
     @IBAction func LED0Change(_ sender: Any) {
-        print("red:",LED0Switch.isOn);
-        var switchState:UInt8 = 0
+        print("red:", LED0Switch.isOn);
+        printESLO(text: "LED_0 toggled")
+        var switchState:UInt8 = 0 // cast for writeValueToChar
         if LED0Switch.isOn {
             switchState = 1
         }
@@ -345,6 +383,4 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         chartViewAxy.setScaleEnabled(false)
         chartViewAxy.pinchZoomEnabled = false
     }
-    
 }
-
