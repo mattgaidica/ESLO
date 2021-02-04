@@ -1,0 +1,6 @@
+framework module Pods_ESLOTests {
+  umbrella header "Pods-ESLOTests-umbrella.h"
+
+  export *
+  module * { export * }
+}

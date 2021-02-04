@@ -3,10 +3,12 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0E09DA93B8E25033B4E765F2 /* Pods_ESLOTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B271F715D2D11243A0D70B11 /* Pods_ESLOTests.framework */; };
+		182E3BD740C79D5A72E2278E /* Pods_ESLO_ESLOUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5B51D2B0ECD17051FBF1AA3 /* Pods_ESLO_ESLOUITests.framework */; };
 		C9491C2925CA80EA00FEF571 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9491C2825CA80EA00FEF571 /* AppDelegate.swift */; };
 		C9491C2B25CA80EA00FEF571 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9491C2A25CA80EA00FEF571 /* SceneDelegate.swift */; };
 		C9491C2D25CA80EA00FEF571 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9491C2C25CA80EA00FEF571 /* ViewController.swift */; };
@@ -15,6 +17,9 @@
 		C9491C3525CA80EA00FEF571 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C9491C3325CA80EA00FEF571 /* LaunchScreen.storyboard */; };
 		C9491C4025CA80EA00FEF571 /* ESLOTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9491C3F25CA80EA00FEF571 /* ESLOTests.swift */; };
 		C9491C4B25CA80EA00FEF571 /* ESLOUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9491C4A25CA80EA00FEF571 /* ESLOUITests.swift */; };
+		C9491C9C25CB044900FEF571 /* gradients.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9491C9B25CB044900FEF571 /* gradients.swift */; };
+		C9491CA225CB369600FEF571 /* UUIDKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9491CA125CB369600FEF571 /* UUIDKey.swift */; };
+		F3BE1E97D334B19A427CAFC6 /* Pods_ESLO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B019890A2DDB984990562A59 /* Pods_ESLO.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,6 +40,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		09136ACD539E0E1C75EF79F1 /* Pods-ESLO.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ESLO.debug.xcconfig"; path = "Target Support Files/Pods-ESLO/Pods-ESLO.debug.xcconfig"; sourceTree = "<group>"; };
+		5D462550453BF5BE257DDF44 /* Pods-ESLO-ESLOUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ESLO-ESLOUITests.debug.xcconfig"; path = "Target Support Files/Pods-ESLO-ESLOUITests/Pods-ESLO-ESLOUITests.debug.xcconfig"; sourceTree = "<group>"; };
+		9D49DC1EC56B3D679A7E3C0A /* Pods-ESLOTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ESLOTests.release.xcconfig"; path = "Target Support Files/Pods-ESLOTests/Pods-ESLOTests.release.xcconfig"; sourceTree = "<group>"; };
+		B019890A2DDB984990562A59 /* Pods_ESLO.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ESLO.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		B271F715D2D11243A0D70B11 /* Pods_ESLOTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ESLOTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB1C6A7A75EBA63E7E4CB6BF /* Pods-ESLO-ESLOUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ESLO-ESLOUITests.release.xcconfig"; path = "Target Support Files/Pods-ESLO-ESLOUITests/Pods-ESLO-ESLOUITests.release.xcconfig"; sourceTree = "<group>"; };
+		C5B51D2B0ECD17051FBF1AA3 /* Pods_ESLO_ESLOUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_ESLO_ESLOUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9491C2525CA80E900FEF571 /* ESLO.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ESLO.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9491C2825CA80EA00FEF571 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C9491C2A25CA80EA00FEF571 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -49,6 +61,10 @@
 		C9491C4625CA80EA00FEF571 /* ESLOUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ESLOUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9491C4A25CA80EA00FEF571 /* ESLOUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ESLOUITests.swift; sourceTree = "<group>"; };
 		C9491C4C25CA80EA00FEF571 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		C9491C9B25CB044900FEF571 /* gradients.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = gradients.swift; sourceTree = "<group>"; };
+		C9491CA125CB369600FEF571 /* UUIDKey.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UUIDKey.swift; sourceTree = "<group>"; };
+		DE06A35B5302E503C2365962 /* Pods-ESLOTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ESLOTests.debug.xcconfig"; path = "Target Support Files/Pods-ESLOTests/Pods-ESLOTests.debug.xcconfig"; sourceTree = "<group>"; };
+		DF9926FE041D28563D69D93C /* Pods-ESLO.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ESLO.release.xcconfig"; path = "Target Support Files/Pods-ESLO/Pods-ESLO.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +72,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F3BE1E97D334B19A427CAFC6 /* Pods_ESLO.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -63,6 +80,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0E09DA93B8E25033B4E765F2 /* Pods_ESLOTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -70,12 +88,26 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				182E3BD740C79D5A72E2278E /* Pods_ESLO_ESLOUITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		408DC84DF151C7126BBE7783 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				09136ACD539E0E1C75EF79F1 /* Pods-ESLO.debug.xcconfig */,
+				DF9926FE041D28563D69D93C /* Pods-ESLO.release.xcconfig */,
+				5D462550453BF5BE257DDF44 /* Pods-ESLO-ESLOUITests.debug.xcconfig */,
+				BB1C6A7A75EBA63E7E4CB6BF /* Pods-ESLO-ESLOUITests.release.xcconfig */,
+				DE06A35B5302E503C2365962 /* Pods-ESLOTests.debug.xcconfig */,
+				9D49DC1EC56B3D679A7E3C0A /* Pods-ESLOTests.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		C9491C1C25CA80E900FEF571 = {
 			isa = PBXGroup;
 			children = (
@@ -83,6 +115,8 @@
 				C9491C3E25CA80EA00FEF571 /* ESLOTests */,
 				C9491C4925CA80EA00FEF571 /* ESLOUITests */,
 				C9491C2625CA80E900FEF571 /* Products */,
+				408DC84DF151C7126BBE7783 /* Pods */,
+				EAB76DED3E217A83E26AF927 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -99,9 +133,11 @@
 		C9491C2725CA80E900FEF571 /* ESLO */ = {
 			isa = PBXGroup;
 			children = (
+				C9491CA025CB369600FEF571 /* Models */,
 				C9491C2825CA80EA00FEF571 /* AppDelegate.swift */,
 				C9491C2A25CA80EA00FEF571 /* SceneDelegate.swift */,
 				C9491C2C25CA80EA00FEF571 /* ViewController.swift */,
+				C9491C9B25CB044900FEF571 /* gradients.swift */,
 				C9491C2E25CA80EA00FEF571 /* Main.storyboard */,
 				C9491C3125CA80EA00FEF571 /* Assets.xcassets */,
 				C9491C3325CA80EA00FEF571 /* LaunchScreen.storyboard */,
@@ -128,6 +164,24 @@
 			path = ESLOUITests;
 			sourceTree = "<group>";
 		};
+		C9491CA025CB369600FEF571 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				C9491CA125CB369600FEF571 /* UUIDKey.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		EAB76DED3E217A83E26AF927 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B019890A2DDB984990562A59 /* Pods_ESLO.framework */,
+				C5B51D2B0ECD17051FBF1AA3 /* Pods_ESLO_ESLOUITests.framework */,
+				B271F715D2D11243A0D70B11 /* Pods_ESLOTests.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -135,9 +189,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C9491C4F25CA80EA00FEF571 /* Build configuration list for PBXNativeTarget "ESLO" */;
 			buildPhases = (
+				AE630EDA148E99D705624711 /* [CP] Check Pods Manifest.lock */,
 				C9491C2125CA80E900FEF571 /* Sources */,
 				C9491C2225CA80E900FEF571 /* Frameworks */,
 				C9491C2325CA80E900FEF571 /* Resources */,
+				63855845B60A226F963E1281 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -152,6 +208,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C9491C5225CA80EA00FEF571 /* Build configuration list for PBXNativeTarget "ESLOTests" */;
 			buildPhases = (
+				E08DA450EAB921B7FC98E165 /* [CP] Check Pods Manifest.lock */,
 				C9491C3725CA80EA00FEF571 /* Sources */,
 				C9491C3825CA80EA00FEF571 /* Frameworks */,
 				C9491C3925CA80EA00FEF571 /* Resources */,
@@ -170,9 +227,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C9491C5525CA80EA00FEF571 /* Build configuration list for PBXNativeTarget "ESLOUITests" */;
 			buildPhases = (
+				146DADE6742B4D764DC57197 /* [CP] Check Pods Manifest.lock */,
 				C9491C4225CA80EA00FEF571 /* Sources */,
 				C9491C4325CA80EA00FEF571 /* Frameworks */,
 				C9491C4425CA80EA00FEF571 /* Resources */,
+				FAC1D14FD42C19EDF6C2AFA0 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -253,14 +312,119 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		146DADE6742B4D764DC57197 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ESLO-ESLOUITests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		63855845B60A226F963E1281 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ESLO/Pods-ESLO-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ESLO/Pods-ESLO-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ESLO/Pods-ESLO-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		AE630EDA148E99D705624711 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ESLO-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		E08DA450EAB921B7FC98E165 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-ESLOTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		FAC1D14FD42C19EDF6C2AFA0 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ESLO-ESLOUITests/Pods-ESLO-ESLOUITests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ESLO-ESLOUITests/Pods-ESLO-ESLOUITests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ESLO-ESLOUITests/Pods-ESLO-ESLOUITests-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		C9491C2125CA80E900FEF571 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				C9491C2D25CA80EA00FEF571 /* ViewController.swift in Sources */,
+				C9491CA225CB369600FEF571 /* UUIDKey.swift in Sources */,
 				C9491C2925CA80EA00FEF571 /* AppDelegate.swift in Sources */,
 				C9491C2B25CA80EA00FEF571 /* SceneDelegate.swift in Sources */,
+				C9491C9C25CB044900FEF571 /* gradients.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -433,12 +597,14 @@
 		};
 		C9491C5025CA80EA00FEF571 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 09136ACD539E0E1C75EF79F1 /* Pods-ESLO.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WBU4CZ6AZJ;
 				INFOPLIST_FILE = ESLO/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -452,12 +618,14 @@
 		};
 		C9491C5125CA80EA00FEF571 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = DF9926FE041D28563D69D93C /* Pods-ESLO.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WBU4CZ6AZJ;
 				INFOPLIST_FILE = ESLO/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -471,6 +639,7 @@
 		};
 		C9491C5325CA80EA00FEF571 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = DE06A35B5302E503C2365962 /* Pods-ESLOTests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -493,6 +662,7 @@
 		};
 		C9491C5425CA80EA00FEF571 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9D49DC1EC56B3D679A7E3C0A /* Pods-ESLOTests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -515,6 +685,7 @@
 		};
 		C9491C5625CA80EA00FEF571 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5D462550453BF5BE257DDF44 /* Pods-ESLO-ESLOUITests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -535,6 +706,7 @@
 		};
 		C9491C5725CA80EA00FEF571 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = BB1C6A7A75EBA63E7E4CB6BF /* Pods-ESLO-ESLOUITests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
