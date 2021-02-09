@@ -6,17 +6,10 @@
 import CoreBluetooth
 
 class ESLOPeripheral: NSObject {
-    public static let LEDServiceUUID             = CBUUID.init(string: "f0001110-0451-4000-b000-000000000000")
-    public static let redLEDCharacteristicUUID   = CBUUID.init(string: "FFF1")
-
-    public static let streamServiceUUID          = CBUUID.init(string: "FFF0")
-    public static let batteryCharacteristicUUID  = CBUUID.init(string: "FFF5")
-    public static let EEG1CharacteristicUUID     = CBUUID.init(string: "FFF4")
-    public static let EEG2CharacteristicUUID     = CBUUID.init(string: "f0001133-0451-4000-b000-000000000000")
-    public static let EEG3CharacteristicUUID     = CBUUID.init(string: "f0001134-0451-4000-b000-000000000000")
-    public static let EEG4CharacteristicUUID     = CBUUID.init(string: "f0001135-0451-4000-b000-000000000000")
-    
-    public static let Axy1CharacteristicUUID     = CBUUID.init(string: "f0001135-0451-4000-b000-000000000000")
-    public static let Axy2CharacteristicUUID     = CBUUID.init(string: "f0001135-0451-4000-b000-000000000000")
-    public static let Axy3CharacteristicUUID     = CBUUID.init(string: "f0001135-0451-4000-b000-000000000000")
+    public static let ESLOServiceUUID            = CBUUID.init(string: "E000")
+    public static let LEDCharacteristicUUID      = CBUUID.init(string: "E001")
+    public static let vitalsCharacteristicUUID   = CBUUID.init(string: "E002")
+    public static let settingsCharacteristicUUID = CBUUID.init(string: "E003")
+    public static let EEGCharacteristicUUID      = CBUUID.init(string: "E004")
+    public static let AXYCharacteristicUUID      = CBUUID.init(string: "E005")
 }

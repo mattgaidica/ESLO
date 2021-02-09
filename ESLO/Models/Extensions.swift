@@ -110,7 +110,6 @@ protocol DataConvertible {
 }
 
 extension DataConvertible where Self: ExpressibleByIntegerLiteral{
-
     init?(data: Data) {
         var value: Self = 0
         guard data.count == MemoryLayout.size(ofValue: value) else { return nil }

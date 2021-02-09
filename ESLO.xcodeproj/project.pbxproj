@@ -20,6 +20,7 @@
 		C9491C9C25CB044900FEF571 /* gradients.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9491C9B25CB044900FEF571 /* gradients.swift */; };
 		C9491CA225CB369600FEF571 /* UUIDKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9491CA125CB369600FEF571 /* UUIDKey.swift */; };
 		C9491CB225CC907600FEF571 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9491CB125CC907600FEF571 /* Extensions.swift */; };
+		C96492C325D24ED800A9F197 /* ESLO.swift in Sources */ = {isa = PBXBuildFile; fileRef = C96492C225D24ED800A9F197 /* ESLO.swift */; };
 		F3BE1E97D334B19A427CAFC6 /* Pods_ESLO.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B019890A2DDB984990562A59 /* Pods_ESLO.framework */; };
 /* End PBXBuildFile section */
 
@@ -65,6 +66,7 @@
 		C9491C9B25CB044900FEF571 /* gradients.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = gradients.swift; sourceTree = "<group>"; };
 		C9491CA125CB369600FEF571 /* UUIDKey.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UUIDKey.swift; sourceTree = "<group>"; };
 		C9491CB125CC907600FEF571 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		C96492C225D24ED800A9F197 /* ESLO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ESLO.swift; sourceTree = "<group>"; };
 		DE06A35B5302E503C2365962 /* Pods-ESLOTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ESLOTests.debug.xcconfig"; path = "Target Support Files/Pods-ESLOTests/Pods-ESLOTests.debug.xcconfig"; sourceTree = "<group>"; };
 		DF9926FE041D28563D69D93C /* Pods-ESLO.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ESLO.release.xcconfig"; path = "Target Support Files/Pods-ESLO/Pods-ESLO.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -171,6 +173,7 @@
 			children = (
 				C9491CA125CB369600FEF571 /* UUIDKey.swift */,
 				C9491CB125CC907600FEF571 /* Extensions.swift */,
+				C96492C225D24ED800A9F197 /* ESLO.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -428,6 +431,7 @@
 				C9491CA225CB369600FEF571 /* UUIDKey.swift in Sources */,
 				C9491C2925CA80EA00FEF571 /* AppDelegate.swift in Sources */,
 				C9491C2B25CA80EA00FEF571 /* SceneDelegate.swift in Sources */,
+				C96492C325D24ED800A9F197 /* ESLO.swift in Sources */,
 				C9491C9C25CB044900FEF571 /* gradients.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

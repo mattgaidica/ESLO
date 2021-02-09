@@ -33,7 +33,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var DutyLabel: UILabel!
     
     // Characteristics
-    private var redChar: CBCharacteristic?
+    private var ledChar: CBCharacteristic?
     private var battChar: CBCharacteristic?
     private var eeg1Char: CBCharacteristic?
     
@@ -193,7 +193,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             DeviceView.backgroundColor = UIColor(hex: "#27ae60ff") // green
             ConnectBtn.setTitle("Disconnect", for: .normal)
             self.startReadRSSI()
-            peripheral.discoverServices([ESLOPeripheral.LEDServiceUUID, ESLOPeripheral.streamServiceUUID]);
+            peripheral.discoverServices([ESLOPeripheral.ESLOServiceUUID, ESLOPeripheral.ESLOServiceUUID]);
             print("Connected to ESLO")
             printESLO(text: "Connected to ESLO device")
         }
@@ -210,7 +210,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             print("Disconnected")
             printESLO(text: "Disconnected")
             
-            redChar = nil
+            ledChar = nil
             battChar = nil
         }
     }
@@ -219,13 +219,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         if let services = peripheral.services {
             for service in services {
-                if service.uuid == ESLOPeripheral.LEDServiceUUID {
+                if service.uuid == ESLOPeripheral.ESLOServiceUUID {
                     print("LED service found")
-                    peripheral.discoverCharacteristics([ESLOPeripheral.redLEDCharacteristicUUID], for: service)
+                    peripheral.discoverCharacteristics([ESLOPeripheral.LEDCharacteristicUUID], for: service)
                 }
-                if( service.uuid == ESLOPeripheral.streamServiceUUID ) {
+                if( service.uuid == ESLOPeripheral.ESLOServiceUUID ) {
                     print("Stream found")
-                    peripheral.discoverCharacteristics([ESLOPeripheral.batteryCharacteristicUUID, ESLOPeripheral.EEG1CharacteristicUUID], for: service)
+                    peripheral.discoverCharacteristics([ESLOPeripheral.vitalsCharacteristicUUID, ESLOPeripheral.EEGCharacteristicUUID], for: service)
                 }
             }
         }
@@ -250,14 +250,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             let data:Data = characteristic.value!
             let _ = data.withUnsafeBytes { pointer in
                 for n in 0..<EEG1Data.count {
-                    EEG1Data[n] = pointer.load(fromByteOffset:n*4, as: Int32.self)
+                    let eegSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
+                    let ESLOpacket = decodeESLO(packet: eegSample)
+                    EEG1Data[n] = ESLOpacket.eslo_data
                 }
             }
             updateChart() // best place to call? Seems like it should be queue after all EEG data is collected
         }
         
         // this is a callback from setting value
-        if characteristic == redChar {
+        if characteristic == ledChar {
             let data:UInt8 = characteristic.value![0]
             LED0State = data.boolValue
             setLEDState()
@@ -282,25 +284,26 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
         if let characteristics = service.characteristics {
             for characteristic in characteristics {
-                if characteristic.uuid == ESLOPeripheral.EEG1CharacteristicUUID {
+                if characteristic.uuid == ESLOPeripheral.EEGCharacteristicUUID {
                     print("EEG1 characteristic found")
                     printESLO(text: "Found EEG1")
                     eeg1Char = characteristic
                     peripheral.setNotifyValue(true, for: characteristic)
                 }
-                if characteristic.uuid == ESLOPeripheral.redLEDCharacteristicUUID {
+                if characteristic.uuid == ESLOPeripheral.LEDCharacteristicUUID {
                     print("LED_0 characteristic found")
                     printESLO(text: "Found LED_0")
                     // Set the characteristic
-                    redChar = characteristic
-                    let data:UInt8 = characteristic.value![0]
-                    LED0State = data.boolValue
+                    ledChar = characteristic
+                    if characteristic.value != nil {
+                        let data:UInt8 = characteristic.value![0]
+                        LED0State = data.boolValue
+                    } else {
+                        LED0State = false
+                    }
                     setLEDState()
-//                    if redChar?.value != nil {
-//                        
-//                    }
                 }
-                if characteristic.uuid == ESLOPeripheral.batteryCharacteristicUUID {
+                if characteristic.uuid == ESLOPeripheral.vitalsCharacteristicUUID {
                     print("Battery characteristic found");
                     printESLO(text: "Found vBatt")
                     battChar = characteristic
@@ -312,7 +315,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     func scanBTE() {
         timeoutTimer.invalidate()
-        centralManager.scanForPeripherals(withServices: [ESLOPeripheral.streamServiceUUID],
+        centralManager.scanForPeripherals(withServices: [ESLOPeripheral.ESLOServiceUUID],
                                           options: [CBCentralManagerScanOptionAllowDuplicatesKey : false])
         timeoutTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { timer in
             self.cancelScan();
@@ -344,7 +347,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     error: Error?) {
         if error != nil {
             // not sure what to do here: Discover Services -> Discover Characteristics -> Updates GUI
-            //            peripheral.discoverServices([ESLOPeripheral.LEDServiceUUID,ESLOPeripheral.streamServiceUUID]);
+            //            peripheral.discoverServices([ESLOPeripheral.LEDServiceUUID,ESLOPeripheral.ESLOServiceUUID]);
             return
         }
         print("Write characteristic success")
@@ -359,12 +362,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     @IBAction func LED0Change(_ sender: Any) {
-        if redChar != nil {
+        if ledChar != nil {
             print("red:", LED0State);
             printESLO(text: "LED_0 toggled")
             LED0State = !LED0State
-            writeValueToChar(withCharacteristic: redChar!, withValue: Data([LED0State.uint8Value]))
-            peripheral.readValue(for: redChar!)
+            writeValueToChar(withCharacteristic: ledChar!, withValue: Data([LED0State.uint8Value]))
+            peripheral.readValue(for: ledChar!)
         }
     }
     
@@ -450,8 +453,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         let leftAxis = chartViewEEG.leftAxis
         leftAxis.labelTextColor = textColor
-        leftAxis.axisMaximum = 55
-        leftAxis.axisMinimum = -5
+//        leftAxis.axisMaximum = 55
+//        leftAxis.axisMinimum = -5
         leftAxis.drawGridLinesEnabled = true
         leftAxis.granularityEnabled = false
         
