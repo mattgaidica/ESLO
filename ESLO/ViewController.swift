@@ -11,6 +11,7 @@ import CoreBluetooth
 import Foundation
 
 class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate {
+    let DEBUG: Bool = true
     
     @IBOutlet weak var chartViewEEG: LineChartView!
     @IBOutlet weak var chartViewAxy: LineChartView!
@@ -23,25 +24,36 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var BatteryBar: UIProgressView!
     @IBOutlet weak var ESLOTerminal: UITextView!
     @IBOutlet weak var WriteTimeLabel: UILabel!
-    @IBOutlet weak var RndNumLabel: UILabel!
-    @IBOutlet weak var LEDButton: UIButton!
     @IBOutlet weak var TxPowerStepper: UIStepper!
     @IBOutlet weak var TxPowerLabel: UILabel!
     @IBOutlet weak var DurationSlider: UISlider!
     @IBOutlet weak var DurationLabel: UILabel!
     @IBOutlet weak var DutySlider: UISlider!
+    @IBOutlet weak var DisconnectOverlay: UIView!
     @IBOutlet weak var DutyLabel: UILabel!
+    @IBOutlet weak var SleepWakeSwitch: UISwitch!
+    @IBOutlet weak var EEG1Switch: UISwitch!
+    @IBOutlet weak var EEG2Switch: UISwitch!
+    @IBOutlet weak var EEG3Switch: UISwitch!
+    @IBOutlet weak var EEG4Switch: UISwitch!
+    @IBOutlet weak var LEDSwitch: UISwitch!
+    @IBOutlet weak var AxySwitch: UISegmentedControl!
+    @IBOutlet weak var PushActivityIndicator: UIActivityIndicatorView!
+    @IBOutlet weak var PushButton: UIButton!
+    @IBOutlet weak var HexTimeLabel: UILabel!
     
     // Characteristics
-    private var ledChar: CBCharacteristic?
+    private var LEDChar: CBCharacteristic?
     private var battChar: CBCharacteristic?
-    private var eeg1Char: CBCharacteristic?
+    private var EEGChar: CBCharacteristic?
+    private var AXYChar: CBCharacteristic?
+    private var settingsChar: CBCharacteristic?
     
-    var countTime: Int = 0
     var timeoutTimer = Timer()
     var RSSITimer = Timer()
     var RSSI: NSNumber = 0
     var terminalCount: Int = 0
+    var lastGraphTime: Double = 1000
     
     var EEG1Data: Array<Int32> = Array(repeating: 0, count: 50)
     var EEG2Data: Array<Int32> = Array(repeating: 0, count: 50)
@@ -49,9 +61,19 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var EEG4Data: Array<Int32> = Array(repeating: 0, count: 50)
     
     var EEG1Plot: Array<Int32> = Array(repeating: 0, count: 500)
+    var EEG2Plot: Array<Int32> = Array(repeating: 0, count: 500)
+    var EEG3Plot: Array<Int32> = Array(repeating: 0, count: 500)
+    var EEG4Plot: Array<Int32> = Array(repeating: 0, count: 500)
     
     // States
-    var LED0State: Bool = false
+    let txArr = [-20, -10, 0, 5]
+    let dutyArr = [0, 1, 2, 4, 8, 12, 24]
+    let durationArr = [0, 1, 5, 10, 30, 60]
+    var esloType: UInt8 = 0
+    
+    // Other
+    let pasteboard = UIPasteboard.general
+    var curSettings: ESLO_Settings! = ESLO_Settings()
     
     // Properties
     private var centralManager: CBCentralManager!
@@ -61,62 +83,39 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         super.viewDidAppear(animated)
     }
     
+    func overlayOn() {
+        self.view.bringSubviewToFront(DisconnectOverlay)
+        DisconnectOverlay.backgroundColor = .black
+    }
+    
+    func overlayOff() {
+        self.view.sendSubviewToBack(DisconnectOverlay)
+        DisconnectOverlay.backgroundColor = .clear
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        if DEBUG == false {
+            overlayOn()
+        }
         print("View loaded")
-        // Do any additional setup after loading the view, typically from a nib.
         Header.setTwoGradient(colorOne: UIColor.purple, colorTwo: UIColor.blue)
 //        updateChart() // !! init chart?
-        LEDButton.setImage(UIImage(systemName: "sun.max.fill", withConfiguration: UIImage.SymbolConfiguration(pointSize: 23, weight: .regular, scale: .medium)), for: .normal)
-        LEDButton.tintColor = UIColor.red
-        printESLO(text: "Init " + getDataStr())
+        printESLO("Init " + getTimeStr())
         centralManager = CBCentralManager(delegate: self, queue: nil)
         ESLOTerminal.text = ""
-        WriteTimeLabel.text = getDataStr()
-        updateRandomNumber()
-    }
-    @IBAction func DutySliderDone(_ sender: Any) {
-        print("dutyDone")
+        WriteTimeLabel.text = getTimeStr()
     }
     
-    @IBAction func DutyStep(_ sender: Any) {
-        let dutyArr = [0, 1, 2, 4, 8, 12, 24]
-        let sliderIdx = Int(DutySlider.value)
-        DutyLabel.text = String(dutyArr[sliderIdx]) + " hr"
-        DutySlider.value = Float(sliderIdx)
+    @IBAction func LEDChange(_ sender: Any) {
+        if settingsChar != nil {
+            LEDSwitch.isEnabled = false
+            peripheral.writeValue(Data([LEDSwitch.isOn.uint8Value]), for: LEDChar!, type: .withResponse)
+            peripheral.readValue(for: LEDChar!)
+        }
     }
     
-    @IBAction func DurationStep(_ sender: Any) {
-        let durationArr = [0, 1, 5, 10, 30, 60]
-        let sliderIdx = Int(DurationSlider.value)
-        DurationLabel.text = String(durationArr[sliderIdx]) + " min"
-        DurationSlider.value = Float(sliderIdx)
-    }
-    
-    @IBAction func WriteTime(_ sender: Any) {
-        printESLO(text: "Wrote " + getDataStr())
-    }
-    @IBAction func WriteUniq(_ sender: Any) {
-        printESLO(text: String(RndNumLabel.text!) + " (" + getDataStr() + ")")
-        updateRandomNumber()
-    }
-    
-    @IBAction func TxStepper(_ sender: Any) {
-        TxPowerLabel.text = String(Int8(TxPowerStepper.value))
-    }
-    
-    func updateRandomNumber() {
-        RndNumLabel.text = String(format: NSLocalizedString("0x%06X", comment: "rn"), Int32.random(in: 0..<0xFFFFFF))
-    }
-    
-    func getDataStr() -> String {
-        let date = Date()
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MMM d, YY HH:mm:ss"
-        return dateFormatter.string(from: date)
-    }
-    
-    func printESLO(text: String) {
+    func printESLO(_ text: String) {
         let formatString = NSLocalizedString("%03i", comment: "terminal")
         ESLOTerminal.text = String(format: formatString, terminalCount) + ">> " + text + "\n" + ESLOTerminal.text
         terminalCount += 1
@@ -138,7 +137,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if central.state != .poweredOn {
             print("Central is not powered on")
         } else {
-            printESLO(text: "Scanning for services")
+            printESLO("Scanning for services")
             scanBTE()
         }
     }
@@ -155,6 +154,44 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         self.centralManager.connect(self.peripheral, options: nil)
     }
     
+    func scanBTE() {
+        centralManager.scanForPeripherals(withServices: [ESLOPeripheral.ESLOServiceUUID],
+                                          options: [CBCentralManagerScanOptionAllowDuplicatesKey : false])
+        timeoutTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { timer in
+            self.cancelScan()
+        }
+    }
+    
+    func getTimeStr() -> String {
+        let date = Date()
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MMM d HH:mm:ss"
+        return dateFormatter.string(from: date)
+    }
+    
+    func hexTime() -> String {
+        var components = DateComponents()
+        components.day = 1
+        components.month = 1
+        components.year = 2021
+        components.hour = 0
+        components.minute = 0
+        components.second = 0
+        let startDate = Calendar.current.date(from: components) ?? Date()
+        
+        let diffComponents = Calendar.current.dateComponents([.second], from: startDate, to: Date())
+        let seconds = UInt32(diffComponents.second!)
+        let hexDateString = String(format: "0x%llX", seconds)
+        
+        // set curSettings
+        curSettings.Time1 = UInt8(seconds & 0xFF)
+        curSettings.Time2 = UInt8(seconds >> 8 & 0xFF)
+        curSettings.Time3 = UInt8(seconds >> 16 & 0xFF)
+        curSettings.Time4 = UInt8(seconds >> 24 & 0xFF)
+        
+        return hexDateString
+    }
+    
     func delegateRSSI() {
         if (self.peripheral != nil){
             self.peripheral.delegate = self
@@ -167,7 +204,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func updateRSSI(RSSI: NSNumber!) {
         let str : String = RSSI.stringValue
         RSSILabel.text = str + "dB"
-        WriteTimeLabel.text = getDataStr()
+        WriteTimeLabel.text = getTimeStr()
+        HexTimeLabel.text = hexTime()
     }
     
     func startReadRSSI() {
@@ -193,25 +231,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             DeviceView.backgroundColor = UIColor(hex: "#27ae60ff") // green
             ConnectBtn.setTitle("Disconnect", for: .normal)
             self.startReadRSSI()
-            peripheral.discoverServices([ESLOPeripheral.ESLOServiceUUID, ESLOPeripheral.ESLOServiceUUID]);
+            peripheral.discoverServices([ESLOPeripheral.ESLOServiceUUID]);
             print("Connected to ESLO")
-            printESLO(text: "Connected to ESLO device")
-        }
-    }
-    
-    // disconnected
-    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        if peripheral == self.peripheral {
-            stopReadRSSI()
-            DeviceLabel.text = "Disconnected"
-            DeviceView.backgroundColor = UIColor(hex: "#c0392bff")
-            ConnectBtn.setTitle("Connect", for: .normal)
-            self.peripheral = nil
-            print("Disconnected")
-            printESLO(text: "Disconnected")
-            
-            ledChar = nil
-            battChar = nil
+            printESLO("Connected to ESLO device")
+            overlayOff()
+            PushButton.isEnabled = true
+            PushButton.alpha = 1
         }
     }
     
@@ -221,11 +246,55 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             for service in services {
                 if service.uuid == ESLOPeripheral.ESLOServiceUUID {
                     print("LED service found")
-                    peripheral.discoverCharacteristics([ESLOPeripheral.LEDCharacteristicUUID], for: service)
+                    peripheral.discoverCharacteristics([ESLOPeripheral.LEDCharacteristicUUID, ESLOPeripheral.vitalsCharacteristicUUID, ESLOPeripheral.settingsCharacteristicUUID, ESLOPeripheral.EEGCharacteristicUUID,
+                                                        ESLOPeripheral.AXYCharacteristicUUID], for: service)
                 }
-                if( service.uuid == ESLOPeripheral.ESLOServiceUUID ) {
-                    print("Stream found")
-                    peripheral.discoverCharacteristics([ESLOPeripheral.vitalsCharacteristicUUID, ESLOPeripheral.EEGCharacteristicUUID], for: service)
+            }
+        }
+    }
+    
+    // Handling discovery of characteristics
+    // manually via peripheral.readValueForCharacteristic(characteristic) <- will callback
+    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
+        if let characteristics = service.characteristics {
+            for characteristic in characteristics {
+                if characteristic.uuid == ESLOPeripheral.LEDCharacteristicUUID {
+                    print("LED_0 characteristic found")
+                    printESLO("Found LED")
+                    // Set the characteristic
+                    LEDChar = characteristic
+                    if characteristic.value != nil {
+                        let data:UInt8 = characteristic.value![0]
+                        LEDSwitch.isOn = data.boolValue
+                    } else {
+                        LEDSwitch.isOn = false
+                    }
+                }
+                if characteristic.uuid == ESLOPeripheral.vitalsCharacteristicUUID {
+                    print("Battery characteristic found")
+                    printESLO("Found vBatt")
+                    battChar = characteristic
+                    peripheral.setNotifyValue(true, for: characteristic)
+                }
+                if characteristic.uuid == ESLOPeripheral.settingsCharacteristicUUID {
+                    print("Settings characteristic found")
+                    printESLO("Found Settings")
+                    settingsChar = characteristic
+                    peripheral.setNotifyValue(true, for: characteristic)
+                    printESLO("Reading settings")
+                    peripheral.readValue(for: settingsChar!)
+                }
+                if characteristic.uuid == ESLOPeripheral.EEGCharacteristicUUID {
+                    print("EEG characteristic found")
+                    printESLO("Found EEG")
+                    EEGChar = characteristic
+                    peripheral.setNotifyValue(true, for: characteristic)
+                }
+                if characteristic.uuid == ESLOPeripheral.AXYCharacteristicUUID {
+                    print("AXY characteristic found")
+                    printESLO("Found AXY")
+                    AXYChar = characteristic
+                    peripheral.setNotifyValue(true, for: characteristic)
                 }
             }
         }
@@ -236,7 +305,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     didUpdateNotificationStateFor characteristic: CBCharacteristic,
                     error: Error?) {
         print("Enabling notify ", characteristic.uuid)
-        
         if error != nil {
             print("Enable notify error")
         }
@@ -246,86 +314,105 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic,
                     error: Error?) {
         // https://www.raywenderlich.com/7181017-unsafe-swift-using-pointers-and-interacting-with-c
-        if characteristic == eeg1Char {
+        if characteristic == EEGChar {
             let data:Data = characteristic.value!
             let _ = data.withUnsafeBytes { pointer in
-                for n in 0..<EEG1Data.count {
+                for n in 0..<EEG1Data.count { // assume count? !!read notif count directly
                     let eegSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
-                    let ESLOpacket = decodeESLO(packet: eegSample)
-                    EEG1Data[n] = ESLOpacket.eslo_data
+                    let ESLOpacket = decodeESLOPacket(eegSample)
+                    self.esloType = ESLOpacket.eslo_type
+                    switch esloType {
+                    case 2:
+                        EEG1Data[n] = ESLOpacket.eslo_data
+                    case 3:
+                        EEG2Data[n] = ESLOpacket.eslo_data
+                    case 4:
+                        EEG3Data[n] = ESLOpacket.eslo_data
+                    case 5:
+                        EEG4Data[n] = ESLOpacket.eslo_data
+                    default:
+                        break
+                    }
                 }
             }
-            updateChart() // best place to call? Seems like it should be queue after all EEG data is collected
+            switch esloType {
+            case 2:
+                EEG1Plot.replaceSubrange(0..<EEG1Data.count, with: EEG1Data)
+                EEG1Plot.rotateLeft(positions: EEG1Data.count)
+            case 3:
+                EEG2Plot.replaceSubrange(0..<EEG2Data.count, with: EEG2Data)
+                EEG2Plot.rotateLeft(positions: EEG2Data.count)
+            case 4:
+                EEG3Plot.replaceSubrange(0..<EEG3Data.count, with: EEG3Data)
+                EEG3Plot.rotateLeft(positions: EEG3Data.count)
+            case 5:
+                EEG4Plot.replaceSubrange(0..<EEG4Data.count, with: EEG4Data)
+                EEG4Plot.rotateLeft(positions: EEG4Data.count)
+            default:
+                break
+            }
+            updateChart() // best place to call? it's going to update 4 times
         }
-        
-        // this is a callback from setting value
-        if characteristic == ledChar {
+        // this is a readValue callback from setting value
+        if characteristic == LEDChar {
             let data:UInt8 = characteristic.value![0]
-            LED0State = data.boolValue
-            setLEDState()
+            LEDSwitch.isOn = data.boolValue
+            LEDSwitch.isEnabled = true
         }
-        
         if characteristic == battChar {
             let data:Data = characteristic.value! //get a data object from the CBCharacteristic
             // same method call, without type annotations
             let _ = data.withUnsafeBytes { pointer in
                 let vBatt = Float(pointer.load(as: Int32.self)) / 1000000
                 let formatString = NSLocalizedString("%1.2fV", comment: "vBatt")
-//                if vBatt > 2.0 && vBatt < 4.0 {
-                    batteryPercentLabel.text = String(format: formatString, vBatt)
-                    BatteryBar.progress = vBatt.converting(from: 2.5...3.0, to: 0.0...1.0) // 350
-//                }
+                batteryPercentLabel.text = String(format: formatString, vBatt)
+                BatteryBar.progress = vBatt.converting(from: 2.5...3.0, to: 0.0...1.0)
             }
+        }
+        if characteristic == settingsChar {
+            let initSettings: ESLO_Settings! = ESLO_Settings()
+            var rawSettings = encodeESLOSettings(initSettings)
+            let data:Data = characteristic.value!
+            let _ = data.withUnsafeBytes { pointer in
+                for n in 0..<rawSettings.count {
+                    rawSettings[n] = pointer.load(fromByteOffset:n, as: UInt8.self)
+                }
+            }
+            curSettings = decodeESLOSettings(rawSettings)
+            settingsUpdate()
+            PushActivityIndicator.stopAnimating()
+            PushButton.isEnabled = true
+            PushButton.alpha = 1
         }
     }
     
-    // Handling discovery of characteristics
-    // manually via peripheral.readValueForCharacteristic(characteristic) <- will callback
-    func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService, error: Error?) {
-        if let characteristics = service.characteristics {
-            for characteristic in characteristics {
-                if characteristic.uuid == ESLOPeripheral.EEGCharacteristicUUID {
-                    print("EEG1 characteristic found")
-                    printESLO(text: "Found EEG1")
-                    eeg1Char = characteristic
-                    peripheral.setNotifyValue(true, for: characteristic)
-                }
-                if characteristic.uuid == ESLOPeripheral.LEDCharacteristicUUID {
-                    print("LED_0 characteristic found")
-                    printESLO(text: "Found LED_0")
-                    // Set the characteristic
-                    ledChar = characteristic
-                    if characteristic.value != nil {
-                        let data:UInt8 = characteristic.value![0]
-                        LED0State = data.boolValue
-                    } else {
-                        LED0State = false
-                    }
-                    setLEDState()
-                }
-                if characteristic.uuid == ESLOPeripheral.vitalsCharacteristicUUID {
-                    print("Battery characteristic found");
-                    printESLO(text: "Found vBatt")
-                    battChar = characteristic
-                    peripheral.setNotifyValue(true, for: characteristic)
-                }
-            }
-        }
-    }
-    
-    func scanBTE() {
-        timeoutTimer.invalidate()
-        centralManager.scanForPeripherals(withServices: [ESLOPeripheral.ESLOServiceUUID],
-                                          options: [CBCentralManagerScanOptionAllowDuplicatesKey : false])
-        timeoutTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { timer in
-            self.cancelScan();
+    // disconnected
+    func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
+        if peripheral == self.peripheral {
+            stopReadRSSI()
+            DeviceLabel.text = "Disconnected"
+            DeviceView.backgroundColor = UIColor(hex: "#c0392bff")
+            ConnectBtn.setTitle("Connect", for: .normal)
+            PushActivityIndicator.stopAnimating()
+            print("Disconnected")
+            printESLO("Disconnected")
+            printESLO("Copied terminal to clipboard")
+            pasteboard.string = ESLOTerminal.text
+            overlayOn()
+            
+            self.peripheral = nil
+            LEDChar = nil
+            battChar = nil
+            EEGChar = nil
+            AXYChar = nil
+            settingsChar = nil
         }
     }
     
     func cancelScan() {
         centralManager?.stopScan()
         print("Scan Stopped")
-        printESLO(text: "Scan stopped")
+        printESLO("Scan stopped")
         DeviceLabel.text = "Scan Timeout"
     }
     
@@ -334,41 +421,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         centralManager?.delegate = self
     }
     
-    // see Write functions in UART module for reference
-    private func writeValueToChar( withCharacteristic characteristic: CBCharacteristic, withValue value: Data) {
-        // Check if it has the write property
-        // characteristic.properties.contains(.writeWithoutResponse) &&
-        if peripheral != nil {
-            peripheral.writeValue(value, for: characteristic, type: .withResponse) //CBCharacteristicWriteType.WithResponse
-        }
-    }
-    
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic,
                     error: Error?) {
         if error != nil {
-            // not sure what to do here: Discover Services -> Discover Characteristics -> Updates GUI
-            //            peripheral.discoverServices([ESLOPeripheral.LEDServiceUUID,ESLOPeripheral.ESLOServiceUUID]);
+            printESLO("Error writing characteristic")
             return
         }
         print("Write characteristic success")
-    }
-    
-    func setLEDState() {
-        if LED0State {
-            LEDButton.alpha = 1.0
-        } else {
-            LEDButton.alpha = 0.25
-        }
-    }
-    
-    @IBAction func LED0Change(_ sender: Any) {
-        if ledChar != nil {
-            print("red:", LED0State);
-            printESLO(text: "LED_0 toggled")
-            LED0State = !LED0State
-            writeValueToChar(withCharacteristic: ledChar!, withValue: Data([LED0State.uint8Value]))
-            peripheral.readValue(for: ledChar!)
-        }
     }
     
     @IBAction func ConnectBtnChange(_ sender: Any) {
@@ -385,8 +444,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     func updateChart(){
-        EEG1Plot.replaceSubrange(0..<EEG1Data.count, with: EEG1Data)
-        EEG1Plot.rotateLeft(positions: EEG1Data.count)
+        if CACurrentMediaTime() - lastGraphTime < 100 {
+            return
+        }
         
         var lineChartEntry = [ChartDataEntry]()
         for i in 0..<EEG1Plot.count {
@@ -499,5 +559,90 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
 //        chartViewAxy.setScaleEnabled(false)
 //        chartViewAxy.pinchZoomEnabled = false
 //        chartViewAxy.data = data // add and update
+    }
+    
+    func settingsUpdate() {
+        SleepWakeSwitch.isOn = curSettings.SleepWake.boolValue
+        DutySlider.value = Float(dutyArr.firstIndex(of: Int(curSettings.EEGDuty))!)
+        updateDutyLabel()
+        DurationSlider.value = Float(durationArr.firstIndex(of: Int(curSettings.EEGDuration))!)
+        updateDurationLabel()
+        EEG1Switch.isOn = curSettings.EEG1.boolValue
+        EEG2Switch.isOn = curSettings.EEG2.boolValue
+        EEG3Switch.isOn = curSettings.EEG3.boolValue
+        EEG4Switch.isOn = curSettings.EEG4.boolValue
+        AxySwitch.selectedSegmentIndex = Int(curSettings.AxyMode)
+        TxPowerStepper.value = Double(Int(curSettings.TxPower))
+        updateTxLabel()
+    }
+    @IBAction func SettingsChanged(_ sender: Any) {
+        curSettings.SleepWake = SleepWakeSwitch.isOn.uint8Value
+        curSettings.EEGDuty = UInt8(dutyArr[Int(DutySlider.value)])
+        curSettings.EEGDuration = UInt8(durationArr[Int(DurationSlider.value)])
+        curSettings.EEG1 = EEG1Switch.isOn.uint8Value
+        curSettings.EEG2 = EEG2Switch.isOn.uint8Value
+        curSettings.EEG3 = EEG3Switch.isOn.uint8Value
+        curSettings.EEG4 = EEG4Switch.isOn.uint8Value
+        curSettings.AxyMode = UInt8(AxySwitch.selectedSegmentIndex)
+        curSettings.TxPower = UInt8(TxPowerStepper.value)
+    }
+    @IBAction func PushSettings(_ sender: Any) {
+        // https://medium.com/@shoheiyokoyama/manual-memory-management-in-swift-c31eb20ea8f
+        if settingsChar != nil {
+            PushButton.isEnabled = false
+            PushButton.alpha = 0.25
+            PushActivityIndicator.startAnimating()
+            var uintSettings = encodeESLOSettings(curSettings)
+            let ptr = UnsafeMutablePointer<UInt8>.allocate(capacity: uintSettings.count)
+            ptr.initialize(from: &uintSettings, count: uintSettings.count)
+            let data = Data(buffer: UnsafeBufferPointer(start: ptr, count: uintSettings.count))
+            peripheral.writeValue(data, for: settingsChar!, type: .withResponse)
+            printESLO("Settings pushed")
+            peripheral.readValue(for: settingsChar!) // force readValue callback
+        }
+    }
+    
+    @IBAction func TxStepper(_ sender: Any) {
+        SettingsChanged(sender)
+        updateTxLabel()
+    }
+    func updateTxLabel()  {
+        TxPowerLabel.text = String(txArr[Int(TxPowerStepper.value)])
+    }
+    
+    @IBAction func DutyChanged(_ sender: Any, forEvent event: UIEvent) {
+        if let touchEvent = event.allTouches?.first {
+            switch touchEvent.phase {
+                case .moved:
+                    updateDutyLabel()
+                case .ended:
+                    SettingsChanged(sender)
+                default:
+                    break
+            }
+        }
+    }
+    func updateDutyLabel() {
+        let sliderIdx = Int(DutySlider.value)
+        DutyLabel.text = String(dutyArr[sliderIdx]) + " hr"
+        DutySlider.value = Float(sliderIdx)
+    }
+    
+    @IBAction func DurationChanged(_ sender: Any, forEvent event: UIEvent) {
+        if let touchEvent = event.allTouches?.first {
+            switch touchEvent.phase {
+                case .moved:
+                    updateDurationLabel()
+                case .ended:
+                    SettingsChanged(sender)
+                default:
+                    break
+            }
+        }
+    }
+    func updateDurationLabel() {
+        let sliderIdx = Int(DurationSlider.value)
+        DurationLabel.text = String(durationArr[sliderIdx]) + " min"
+        DurationSlider.value = Float(sliderIdx)
     }
 }

@@ -5,6 +5,7 @@
 
 import CoreBluetooth
 
+// remember to whitelist chars in didDiscoverServices
 class ESLOPeripheral: NSObject {
     public static let ESLOServiceUUID            = CBUUID.init(string: "E000")
     public static let LEDCharacteristicUUID      = CBUUID.init(string: "E001")
