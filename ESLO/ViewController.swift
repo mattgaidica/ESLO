@@ -43,6 +43,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var HexTimeLabel: UILabel!
     @IBOutlet weak var RmOffsetSwitch: UISwitch!
     @IBOutlet weak var DataSyncLabel: UILabel!
+    @IBOutlet weak var SciUnitsSwitch: UISwitch!
+    @IBOutlet weak var AxyUnitsLabel: UILabel!
+    @IBOutlet weak var EEGUnitsLabel: UILabel!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -542,6 +545,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             
             if EEG1gate && EEG2gate && EEG3gate && EEG4gate {
+                // +/-Vref = 3, gain = 12, 24-bit resolution
+                var EEGfactor: Double = 1.0
+                if SciUnitsSwitch.isOn {
+                    EEGfactor = ((3/12) / Double(UInt32(0xFFFFFF)))
+                }
+                
                 if EEG1Switch.isOn {
                     lineChartEntry = [ChartDataEntry]()
                     DCoffset = 0
@@ -549,7 +558,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         DCoffset = EEG1Plot.average
                     }
                     for i in 0..<EEG1Plot.count {
-                        let value = ChartDataEntry(x: Double(i), y: Double(EEG1Plot[i])-DCoffset)
+                        let value = ChartDataEntry(x: Double(i), y: (Double(EEG1Plot[i])-DCoffset) * EEGfactor * 1000.0) //uV
                         lineChartEntry.append(value)
                     }
                     let line1 = LineChartDataSet(entries: lineChartEntry, label: "EEG Ch1")
@@ -565,7 +574,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         DCoffset = EEG2Plot.average
                     }
                     for i in 0..<EEG2Plot.count {
-                        let value = ChartDataEntry(x: Double(i), y: Double(EEG2Plot[i])-DCoffset)
+                        let value = ChartDataEntry(x: Double(i), y: (Double(EEG2Plot[i])-DCoffset) * EEGfactor * 1000000.0) //uV
                         lineChartEntry.append(value)
                     }
 
@@ -582,7 +591,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         DCoffset = EEG3Plot.average
                     }
                     for i in 0..<EEG3Plot.count {
-                        let value = ChartDataEntry(x: Double(i), y: Double(EEG3Plot[i])-DCoffset)
+                        let value = ChartDataEntry(x: Double(i), y: (Double(EEG3Plot[i])-DCoffset) * EEGfactor * 1000000.0) //uV
                         lineChartEntry.append(value)
                     }
 
@@ -599,7 +608,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         DCoffset = EEG4Plot.average
                     }
                     for i in 0..<EEG4Plot.count {
-                        let value = ChartDataEntry(x: Double(i), y: Double(EEG4Plot[i])-DCoffset)
+                        let value = ChartDataEntry(x: Double(i), y: (Double(EEG4Plot[i])-DCoffset) * EEGfactor * 1000000.0) //mV
                         lineChartEntry.append(value)
                     }
 
@@ -655,12 +664,19 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 var DCoffset: Double
                 lineChartEntry = [ChartDataEntry]()
                 
+                var multiXl: Double = 1.0
+                var divideXl: Double = 1.0
+                if SciUnitsSwitch.isOn {
+                    multiXl = 0.98
+                    divideXl = 16.0
+                }
+                
                 DCoffset = 0
                 if RmOffsetSwitch.isOn {
                     DCoffset = AXYXPlot.average
                 }
                 for i in 0..<AXYXPlot.count {
-                    let value = ChartDataEntry(x: Double(i), y: Double(AXYXPlot[i])-DCoffset)
+                    let value = ChartDataEntry(x: Double(i), y: ((Double(AXYXPlot[i])-DCoffset)/divideXl)*multiXl)
                     lineChartEntry.append(value)
                 }
                 let line1 = LineChartDataSet(entries: lineChartEntry, label: "Axy X")
@@ -675,7 +691,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     DCoffset = AXYYPlot.average
                 }
                 for i in 0..<AXYYPlot.count {
-                    let value = ChartDataEntry(x: Double(i), y: Double(AXYYPlot[i])-DCoffset)
+                    let value = ChartDataEntry(x: Double(i), y: ((Double(AXYYPlot[i])-DCoffset)/divideXl)*multiXl)
                     lineChartEntry.append(value)
                 }
 
@@ -691,7 +707,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     DCoffset = AXYZPlot.average
                 }
                 for i in 0..<AXYZPlot.count {
-                    let value = ChartDataEntry(x: Double(i), y: Double(AXYZPlot[i])-DCoffset)
+                    let value = ChartDataEntry(x: Double(i), y: ((Double(AXYZPlot[i])-DCoffset)/divideXl)*multiXl)
                     lineChartEntry.append(value)
                 }
 
@@ -737,6 +753,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
         } else {
             chartViewAxy.data = nil
+        }
+    }
+    @IBAction func SciUnitsChanged(_ sender: Any) {
+        if SciUnitsSwitch.isOn {
+            EEGUnitsLabel.alpha = 1
+            AxyUnitsLabel.alpha = 1
+        } else {
+            EEGUnitsLabel.alpha = 0
+            AxyUnitsLabel.alpha = 0
         }
     }
     
