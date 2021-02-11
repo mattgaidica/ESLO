@@ -23,6 +23,39 @@ struct ESLO_Settings {
     var Time4       = UInt8(0)
 };
 
+func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings) -> Bool {
+    var ret: Bool = true
+    if settings1.SleepWake != settings2.SleepWake {
+        ret = false
+    }
+    if settings1.EEGDuty != settings2.EEGDuty {
+        ret = false
+    }
+    if settings1.EEGDuration != settings2.EEGDuration {
+        ret = false
+    }
+    if settings1.EEG1 != settings2.EEG1 {
+        ret = false
+    }
+    if settings1.EEG2 != settings2.EEG2 {
+        ret = false
+    }
+    if settings1.EEG3 != settings2.EEG3 {
+        ret = false
+    }
+    if settings1.EEG4 != settings2.EEG4 {
+        ret = false
+    }
+    if settings1.AxyMode != settings2.AxyMode {
+        ret = false
+    }
+    if settings1.TxPower != settings2.TxPower {
+        ret = false
+    }
+    
+    return ret
+}
+
 func encodeESLOSettings(_ settings: ESLO_Settings) -> [UInt8] {
     var rawSettings: Array<UInt8> = Array(repeating: 0, count: 16)
     rawSettings[0]  = settings.SleepWake
@@ -68,9 +101,6 @@ func decodeESLOPacket(_ packet: UInt32) -> (eslo_type: UInt8, eslo_data: Int32) 
         thisData = packet | 0xFF000000; // 0xFF000000
     } else {
         thisData = packet & 0x00FFFFFF;
-    }
-    if thisData > UInt32(Int32.max) {
-        
     }
     let thisData_trun = Int32(truncatingIfNeeded: thisData)
     return (thisType, thisData_trun)

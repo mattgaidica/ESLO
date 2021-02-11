@@ -20,25 +20,31 @@
                             <view alpha="0.75" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="18I-1h-UA1">
                                 <rect key="frame" x="0.0" y="117" width="428" height="809"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMinY="YES"/>
-                                <subviews>
-                                    <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="BJs-Yq-YbP">
-                                        <rect key="frame" x="371" y="48" width="49" height="31"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <color key="onTintColor" systemColor="systemRedColor"/>
-                                        <connections>
-                                            <action selector="LEDChange:" destination="BYZ-38-t0r" eventType="valueChanged" id="NEs-IZ-OU5"/>
-                                        </connections>
-                                    </switch>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="LED" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="HBi-8B-nd4">
-                                        <rect key="frame" x="337" y="54" width="28" height="18"/>
-                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                                        <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                </subviews>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Data Synced" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="fLa-Pa-KBd">
+                                <rect key="frame" x="172" y="187" width="84" height="16"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <color key="backgroundColor" red="0.92484372849999996" green="0.92504131789999999" blue="0.93222016100000005" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="12"/>
+                                <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="LED" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="HBi-8B-nd4">
+                                <rect key="frame" x="337" y="171" width="28" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <nil key="highlightedColor"/>
+                            </label>
+                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="BJs-Yq-YbP">
+                                <rect key="frame" x="371" y="164" width="49" height="31"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <color key="onTintColor" systemColor="systemRedColor"/>
+                                <connections>
+                                    <action selector="LEDChange:" destination="BYZ-38-t0r" eventType="valueChanged" id="NEs-IZ-OU5"/>
+                                </connections>
+                            </switch>
                             <view alpha="0.10000000149011612" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eay-gn-JHM" userLabel="Sep: Controls">
                                 <rect key="frame" x="0.0" y="462" width="428" height="1"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -352,10 +358,10 @@
                                 </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
-                            <view alpha="0.10000000149011612" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pYY-un-suu" userLabel="Sep: Terminal">
+                            <view alpha="0.5" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="pYY-un-suu" userLabel="Sep: Terminal">
                                 <rect key="frame" x="0.0" y="203" width="428" height="2"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <color key="backgroundColor" red="0.93514096739999997" green="0.93534010649999999" blue="0.94250011440000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
@@ -367,6 +373,7 @@
                         <outlet property="AxySwitch" destination="lp0-NS-p7m" id="Lyu-i5-ecN"/>
                         <outlet property="BatteryBar" destination="uw9-2g-J2B" id="wMD-Zb-Ewx"/>
                         <outlet property="ConnectBtn" destination="ggx-J4-gHi" id="bxd-fd-laR"/>
+                        <outlet property="DataSyncLabel" destination="fLa-Pa-KBd" id="WYH-TH-JRq"/>
                         <outlet property="DeviceLabel" destination="cw6-xU-Sht" id="cBt-Yr-7Zr"/>
                         <outlet property="DeviceView" destination="gl0-Av-umx" id="Ef8-sE-23V"/>
                         <outlet property="DisconnectOverlay" destination="18I-1h-UA1" id="jZ0-Do-Qno"/>
@@ -385,6 +392,7 @@
                         <outlet property="PushActivityIndicator" destination="g92-hj-ma2" id="xTC-kq-eyL"/>
                         <outlet property="PushButton" destination="H8P-7v-YtF" id="MBC-As-3bt"/>
                         <outlet property="RSSILabel" destination="9Ba-7t-tp2" id="vul-7l-hhj"/>
+                        <outlet property="RmOffsetSwitch" destination="syR-50-Abl" id="Plp-Ll-7GY"/>
                         <outlet property="SleepWakeSwitch" destination="vSl-qt-yyq" id="eDf-si-HVw"/>
                         <outlet property="TxPowerLabel" destination="jZi-R3-uTd" id="N0D-uF-i4a"/>
                         <outlet property="TxPowerStepper" destination="Cf3-SJ-hqd" id="7dW-q4-U8G"/>
