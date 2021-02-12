@@ -55,6 +55,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     private var settingsChar: CBCharacteristic?
     
     var timeoutTimer = Timer()
+    var timeOutSec: Double = 20
     var RSSITimer = Timer()
     var RSSI: NSNumber = 0
     var terminalCount: Int = 0
@@ -136,9 +137,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         print("View loaded")
         Header.setTwoGradient(colorOne: UIColor.purple, colorTwo: UIColor.blue)
 //        updateChart() // !! init chart?
-        printESLO("Init " + getTimeStr())
         centralManager = CBCentralManager(delegate: self, queue: nil)
-        ESLOTerminal.text = ""
         WriteTimeLabel.text = getTimeStr()
     }
     
@@ -186,13 +185,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         self.peripheral.delegate = self
         self.RSSI = RSSI
         // Connect!
+        ESLOTerminal.text = ""
+        terminalCount = 0
+        printESLO("Connected " + getTimeStr())
         self.centralManager.connect(self.peripheral, options: nil)
     }
     
     func scanBTE() {
         centralManager.scanForPeripherals(withServices: [ESLOPeripheral.ESLOServiceUUID],
                                           options: [CBCentralManagerScanOptionAllowDuplicatesKey : false])
-        timeoutTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: false) { timer in
+        timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeOutSec, repeats: false) { timer in
             self.cancelScan()
         }
     }
