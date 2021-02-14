@@ -61,21 +61,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var terminalCount: Int = 0
     var lastGraphTime: Double = 1000
     
-    var EEG1Data: Array<Int32> = Array(repeating: 0, count: 50)
-    var EEG2Data: Array<Int32> = Array(repeating: 0, count: 50)
-    var EEG3Data: Array<Int32> = Array(repeating: 0, count: 50)
-    var EEG4Data: Array<Int32> = Array(repeating: 0, count: 50)
-    
-    var EEG1Plot: Array<Int32> = Array(repeating: 0, count: 500)
-    var EEG2Plot: Array<Int32> = Array(repeating: 0, count: 500)
-    var EEG3Plot: Array<Int32> = Array(repeating: 0, count: 500)
-    var EEG4Plot: Array<Int32> = Array(repeating: 0, count: 500)
-    
-    var EEGnew1: Bool = false
-    var EEGnew2: Bool = false
-    var EEGnew3: Bool = false
-    var EEGnew4: Bool = false
-    
+    var BOTH_CHARTS: Int = 3
+    var AXY_CHART: Int = 1
+    var AXY_FS: Double = 1
     var AXYXData: Array<Int32> = Array(repeating: 0, count: 32)
     var AXYYData: Array<Int32> = Array(repeating: 0, count: 32)
     var AXYZData: Array<Int32> = Array(repeating: 0, count: 32)
@@ -88,10 +76,28 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var AXYnewY: Bool = false
     var AXYnewZ: Bool = false
     
+    var EEG_CHART: Int = 2
+    var EEG_FS: Double = 250
+    var EEG1Data: Array<Int32> = Array(repeating: 0, count: 50)
+    var EEG2Data: Array<Int32> = Array(repeating: 0, count: 50)
+    var EEG3Data: Array<Int32> = Array(repeating: 0, count: 50)
+    var EEG4Data: Array<Int32> = Array(repeating: 0, count: 50)
+    
+    var EEG1Plot: Array<Int32> = Array(repeating: 0, count: 350)
+    var EEG2Plot: Array<Int32> = Array(repeating: 0, count: 350)
+    var EEG3Plot: Array<Int32> = Array(repeating: 0, count: 350)
+    var EEG4Plot: Array<Int32> = Array(repeating: 0, count: 350)
+    
+    var EEGnew1: Bool = false
+    var EEGnew2: Bool = false
+    var EEGnew3: Bool = false
+    var EEGnew4: Bool = false
+    
     // States
+    let axyArr = [0,1,10]
     let txArr = [-20, -10, 0, 5]
-    let dutyArr = [0, 1, 2, 4, 8, 12, 24]
-    let durationArr = [0, 1, 5, 10, 30, 60]
+    let dutyArr = [0, 1, 2, 4, 8, 12, 24] // hours
+    let durationArr = [0, 1, 5, 10, 30, 60] // minutes
     var esloType: UInt8 = 0
     
     // Other
@@ -105,6 +111,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // Graph Vars
     var DCoffset: Double = 0.0
+    var data = LineChartData()
+    var lineChartEntry = [ChartDataEntry]()
     let textColor = UIColor.white
     // line colors, see: http://0xrgb.com/#material
     let EEG1Color = UIColor(red: 255/255, green: 87/255, blue: 34/255, alpha: 1) // deep orange
@@ -139,6 +147,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
 //        updateChart() // !! init chart?
         centralManager = CBCentralManager(delegate: self, queue: nil)
         WriteTimeLabel.text = getTimeStr()
+        ESLOTerminal.text = ""
     }
     
     @IBAction func LEDChange(_ sender: Any) {
@@ -171,8 +180,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if central.state != .poweredOn {
             print("Central is not powered on")
         } else {
-            printESLO("Scanning for services")
             scanBTE()
+            updateChart(BOTH_CHARTS)
         }
     }
     
@@ -186,7 +195,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         self.RSSI = RSSI
         // Connect!
         ESLOTerminal.text = ""
-        terminalCount = 0
         printESLO("Connected " + getTimeStr())
         self.centralManager.connect(self.peripheral, options: nil)
     }
@@ -423,7 +431,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             default:
                 break
             }
-            updateChart() // best place to call? it's going to update 4 times
+            updateChart(EEG_CHART) // best place to call? it's going to update 4 times
         }
         if characteristic == AXYChar {
             let data:Data = characteristic.value!
@@ -460,7 +468,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             default:
                 break
             }
-            updateChart() // best place to call? it's going to update 4 times
+            updateChart(AXY_CHART) // best place to call? it's going to update 4 times
         }
     }
     
@@ -484,6 +492,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             EEGChar = nil
             AXYChar = nil
             settingsChar = nil
+            terminalCount = 1
         }
     }
     
@@ -521,240 +530,244 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
-    func updateChart(){
+    func updateChart(_ chartNum: Int){
 //        if (CACurrentMediaTime() - lastGraphTime < 100) {
 //            return
 //        }
-        let data = LineChartData()
-        var lineChartEntry = [ChartDataEntry]()
         
-        if EEG1Switch.isOn || EEG2Switch.isOn || EEG3Switch.isOn || EEG4Switch.isOn {
-            var EEG1gate: Bool = true
-            if EEG1Switch.isOn && !EEGnew1 {
-                EEG1gate = false;
-            }
-            var EEG2gate: Bool = true
-            if EEG2Switch.isOn && !EEGnew2 {
-                EEG2gate = false;
-            }
-            var EEG3gate: Bool = true
-            if EEG3Switch.isOn && !EEGnew3 {
-                EEG3gate = false;
-            }
-            var EEG4gate: Bool = true
-            if EEG4Switch.isOn && !EEGnew4 {
-                EEG4gate = false;
-            }
-            
-            if EEG1gate && EEG2gate && EEG3gate && EEG4gate {
-                // +/-Vref = 3, gain = 12, 24-bit resolution
-                var EEGfactor: Double = 1.0
-                if SciUnitsSwitch.isOn {
-                    EEGfactor = ((3/12) / Double(UInt32(0xFFFFFF)))
-                }
-                
-                if EEG1Switch.isOn {
+        if chartNum == AXY_CHART || chartNum == BOTH_CHARTS {
+            if AxySwitch.selectedSegmentIndex > 0 {
+                if AXYnewX && AXYnewX && AXYnewX {
+                    data = LineChartData()
                     lineChartEntry = [ChartDataEntry]()
+                    
+                    var multiXl: Double = 1.0
+                    var divideXl: Double = 1.0
+                    if SciUnitsSwitch.isOn {
+                        multiXl = 0.98
+                        divideXl = 16.0
+                    }
+                    let Fs = Double(axyArr[AxySwitch.selectedSegmentIndex])
+                    
                     DCoffset = 0
                     if RmOffsetSwitch.isOn {
-                        DCoffset = EEG1Plot.average
+                        DCoffset = AXYXPlot.average
                     }
-                    for i in 0..<EEG1Plot.count {
-                        let value = ChartDataEntry(x: Double(i), y: (Double(EEG1Plot[i])-DCoffset) * EEGfactor * 1000.0) //uV
+                    for i in 0..<AXYXPlot.count {
+                        let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYXPlot[i])-DCoffset)/divideXl)*multiXl)
                         lineChartEntry.append(value)
                     }
-                    let line1 = LineChartDataSet(entries: lineChartEntry, label: "EEG Ch1")
-                    line1.colors = [EEG1Color]
+                    let line1 = LineChartDataSet(entries: lineChartEntry, label: "Axy X")
+                    line1.colors = [AXYXColor]
                     line1.drawCirclesEnabled = false
                     line1.drawValuesEnabled = false
                     data.addDataSet(line1)
-                }
-                if EEG2Switch.isOn {
-                    lineChartEntry = [ChartDataEntry]()
+
+                    var lineChartEntry = [ChartDataEntry]()
                     DCoffset = 0
                     if RmOffsetSwitch.isOn {
-                        DCoffset = EEG2Plot.average
+                        DCoffset = AXYYPlot.average
                     }
-                    for i in 0..<EEG2Plot.count {
-                        let value = ChartDataEntry(x: Double(i), y: (Double(EEG2Plot[i])-DCoffset) * EEGfactor * 1000000.0) //uV
+                    for i in 0..<AXYYPlot.count {
+                        let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYYPlot[i])-DCoffset)/divideXl)*multiXl)
                         lineChartEntry.append(value)
                     }
 
-                    let line2 = LineChartDataSet(entries: lineChartEntry, label: "EEG Ch2")
-                    line2.colors = [EEG2Color]
+                    let line2 = LineChartDataSet(entries: lineChartEntry, label: "Axy Y")
+                    line2.colors = [AXYYColor]
                     line2.drawCirclesEnabled = false
                     line2.drawValuesEnabled = false
                     data.addDataSet(line2)
-                }
-                if EEG3Switch.isOn {
+
                     lineChartEntry = [ChartDataEntry]()
                     DCoffset = 0
                     if RmOffsetSwitch.isOn {
-                        DCoffset = EEG3Plot.average
+                        DCoffset = AXYZPlot.average
                     }
-                    for i in 0..<EEG3Plot.count {
-                        let value = ChartDataEntry(x: Double(i), y: (Double(EEG3Plot[i])-DCoffset) * EEGfactor * 1000000.0) //uV
+                    for i in 0..<AXYZPlot.count {
+                        let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYZPlot[i])-DCoffset)/divideXl)*multiXl)
                         lineChartEntry.append(value)
                     }
 
-                    let line3 = LineChartDataSet(entries: lineChartEntry, label: "EEG Ch3")
-                    line3.colors = [EEG3Color]
+                    let line3 = LineChartDataSet(entries: lineChartEntry, label: "Axy Z")
+                    line3.colors = [AXYZColor]
                     line3.drawCirclesEnabled = false
                     line3.drawValuesEnabled = false
                     data.addDataSet(line3)
-                }
-                if EEG4Switch.isOn {
-                    lineChartEntry = [ChartDataEntry]()
-                    DCoffset = 0
-                    if RmOffsetSwitch.isOn {
-                        DCoffset = EEG4Plot.average
-                    }
-                    for i in 0..<EEG4Plot.count {
-                        let value = ChartDataEntry(x: Double(i), y: (Double(EEG4Plot[i])-DCoffset) * EEGfactor * 1000000.0) //mV
-                        lineChartEntry.append(value)
-                    }
 
-                    let line4 = LineChartDataSet(entries: lineChartEntry, label: "EEG Ch4")
-                    line4.colors = [EEG4Color]
-                    line4.drawCirclesEnabled = false
-                    line4.drawValuesEnabled = false
-                    data.addDataSet(line4)
+                    let l = chartViewAxy.legend
+                    l.form = .line
+                    l.font = UIFont(name: "HelveticaNeue-Light", size: 11)!
+                    l.textColor = textColor
+                    l.horizontalAlignment = .left
+                    l.verticalAlignment = .bottom
+                    l.orientation = .horizontal
+                    l.drawInside = false
+                    
+                    let xAxis = chartViewAxy.xAxis
+                    xAxis.labelFont = .systemFont(ofSize: 11)
+                    xAxis.labelTextColor = textColor
+                    xAxis.drawAxisLineEnabled = true
+                    
+                    let leftAxis = chartViewAxy.leftAxis
+                    leftAxis.labelTextColor = textColor
+            //        leftAxis.axisMaximum = 55
+            //        leftAxis.axisMinimum = -5
+                    leftAxis.drawGridLinesEnabled = true
+                    leftAxis.granularityEnabled = false
+                    
+                    chartViewAxy.rightAxis.enabled = false
+                    chartViewAxy.legend.enabled = true
+                    
+                    chartViewAxy.chartDescription?.enabled = false
+                    chartViewAxy.dragEnabled = false
+                    chartViewAxy.setScaleEnabled(false)
+                    chartViewAxy.pinchZoomEnabled = false
+                    chartViewAxy.data = data // add and update
+                    
+                    AXYnewX = false
+                    AXYnewY = false
+                    AXYnewZ = false
                 }
-
-                let l = chartViewEEG.legend
-                l.form = .line
-                l.font = UIFont(name: "HelveticaNeue-Light", size: 11)!
-                l.textColor = textColor
-                l.horizontalAlignment = .left
-                l.verticalAlignment = .bottom
-                l.orientation = .horizontal
-                l.drawInside = false
-                
-                let xAxis = chartViewEEG.xAxis
-                xAxis.labelFont = .systemFont(ofSize: 11)
-                xAxis.labelTextColor = textColor
-                xAxis.drawAxisLineEnabled = true
-                
-                let leftAxis = chartViewEEG.leftAxis
-                leftAxis.labelTextColor = textColor
-        //        leftAxis.axisMaximum = 55
-        //        leftAxis.axisMinimum = -5
-                leftAxis.drawGridLinesEnabled = true
-                leftAxis.granularityEnabled = false
-                
-                chartViewEEG.rightAxis.enabled = false
-                chartViewEEG.legend.enabled = true
-                
-                chartViewEEG.chartDescription?.enabled = false
-                chartViewEEG.dragEnabled = false
-                chartViewEEG.setScaleEnabled(false)
-                chartViewEEG.pinchZoomEnabled = false
-                chartViewEEG.data = data // add and update
-                
-                EEGnew1 = false
-                EEGnew2 = false
-                EEGnew3 = false
-                EEGnew4 = false
+            } else {
+                chartViewAxy.data = nil
             }
-        } else {
-            chartViewEEG.data = nil
         }
         
-        if AxySwitch.selectedSegmentIndex > 0 {
-            if AXYnewX && AXYnewX && AXYnewX {
-                let data = LineChartData()
-                var DCoffset: Double
-                lineChartEntry = [ChartDataEntry]()
-                
-                var multiXl: Double = 1.0
-                var divideXl: Double = 1.0
-                if SciUnitsSwitch.isOn {
-                    multiXl = 0.98
-                    divideXl = 16.0
+        if chartNum == EEG_CHART || chartNum == BOTH_CHARTS {
+            if EEG1Switch.isOn || EEG2Switch.isOn || EEG3Switch.isOn || EEG4Switch.isOn {
+                var EEG1gate: Bool = true
+                if EEG1Switch.isOn && !EEGnew1 {
+                    EEG1gate = false;
+                }
+                var EEG2gate: Bool = true
+                if EEG2Switch.isOn && !EEGnew2 {
+                    EEG2gate = false;
+                }
+                var EEG3gate: Bool = true
+                if EEG3Switch.isOn && !EEGnew3 {
+                    EEG3gate = false;
+                }
+                var EEG4gate: Bool = true
+                if EEG4Switch.isOn && !EEGnew4 {
+                    EEG4gate = false;
                 }
                 
-                DCoffset = 0
-                if RmOffsetSwitch.isOn {
-                    DCoffset = AXYXPlot.average
-                }
-                for i in 0..<AXYXPlot.count {
-                    let value = ChartDataEntry(x: Double(i), y: ((Double(AXYXPlot[i])-DCoffset)/divideXl)*multiXl)
-                    lineChartEntry.append(value)
-                }
-                let line1 = LineChartDataSet(entries: lineChartEntry, label: "Axy X")
-                line1.colors = [AXYXColor]
-                line1.drawCirclesEnabled = false
-                line1.drawValuesEnabled = false
-                data.addDataSet(line1)
+                if EEG1gate && EEG2gate && EEG3gate && EEG4gate {
+                    data = LineChartData()
 
-                var lineChartEntry = [ChartDataEntry]()
-                DCoffset = 0
-                if RmOffsetSwitch.isOn {
-                    DCoffset = AXYYPlot.average
-                }
-                for i in 0..<AXYYPlot.count {
-                    let value = ChartDataEntry(x: Double(i), y: ((Double(AXYYPlot[i])-DCoffset)/divideXl)*multiXl)
-                    lineChartEntry.append(value)
-                }
+                    // +/-Vref = 3, gain = 12, 24-bit resolution
+                    var EEGfactor: Double = 1.0
+                    if SciUnitsSwitch.isOn {
+                        EEGfactor = ((3/12) / Double(UInt32(0xFFFFFF)))
+                    }
+                    
+                    if EEG1Switch.isOn {
+                        lineChartEntry = [ChartDataEntry]()
+                        DCoffset = 0
+                        if RmOffsetSwitch.isOn {
+                            DCoffset = EEG1Plot.average
+                        }
+                        for i in 0..<EEG1Plot.count {
+                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG1Plot[i])-DCoffset) * EEGfactor * 1000.0) //uV
+                            lineChartEntry.append(value)
+                        }
+                        let line1 = LineChartDataSet(entries: lineChartEntry, label: "EEG Ch1")
+                        line1.colors = [EEG1Color]
+                        line1.drawCirclesEnabled = false
+                        line1.drawValuesEnabled = false
+                        data.addDataSet(line1)
+                    }
+                    if EEG2Switch.isOn {
+                        lineChartEntry = [ChartDataEntry]()
+                        DCoffset = 0
+                        if RmOffsetSwitch.isOn {
+                            DCoffset = EEG2Plot.average
+                        }
+                        for i in 0..<EEG2Plot.count {
+                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG2Plot[i])-DCoffset) * EEGfactor * 1000000.0) //uV
+                            lineChartEntry.append(value)
+                        }
 
-                let line2 = LineChartDataSet(entries: lineChartEntry, label: "Axy Y")
-                line2.colors = [AXYYColor]
-                line2.drawCirclesEnabled = false
-                line2.drawValuesEnabled = false
-                data.addDataSet(line2)
+                        let line2 = LineChartDataSet(entries: lineChartEntry, label: "EEG Ch2")
+                        line2.colors = [EEG2Color]
+                        line2.drawCirclesEnabled = false
+                        line2.drawValuesEnabled = false
+                        data.addDataSet(line2)
+                    }
+                    if EEG3Switch.isOn {
+                        lineChartEntry = [ChartDataEntry]()
+                        DCoffset = 0
+                        if RmOffsetSwitch.isOn {
+                            DCoffset = EEG3Plot.average
+                        }
+                        for i in 0..<EEG3Plot.count {
+                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG3Plot[i])-DCoffset) * EEGfactor * 1000000.0) //uV
+                            lineChartEntry.append(value)
+                        }
 
-                lineChartEntry = [ChartDataEntry]()
-                DCoffset = 0
-                if RmOffsetSwitch.isOn {
-                    DCoffset = AXYZPlot.average
+                        let line3 = LineChartDataSet(entries: lineChartEntry, label: "EEG Ch3")
+                        line3.colors = [EEG3Color]
+                        line3.drawCirclesEnabled = false
+                        line3.drawValuesEnabled = false
+                        data.addDataSet(line3)
+                    }
+                    if EEG4Switch.isOn {
+                        lineChartEntry = [ChartDataEntry]()
+                        DCoffset = 0
+                        if RmOffsetSwitch.isOn {
+                            DCoffset = EEG4Plot.average
+                        }
+                        for i in 0..<EEG4Plot.count {
+                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG4Plot[i])-DCoffset) * EEGfactor * 1000000.0) //mV
+                            lineChartEntry.append(value)
+                        }
+
+                        let line4 = LineChartDataSet(entries: lineChartEntry, label: "EEG Ch4")
+                        line4.colors = [EEG4Color]
+                        line4.drawCirclesEnabled = false
+                        line4.drawValuesEnabled = false
+                        data.addDataSet(line4)
+                    }
+
+                    let l = chartViewEEG.legend
+                    l.form = .line
+                    l.font = UIFont(name: "HelveticaNeue-Light", size: 11)!
+                    l.textColor = textColor
+                    l.horizontalAlignment = .left
+                    l.verticalAlignment = .bottom
+                    l.orientation = .horizontal
+                    l.drawInside = false
+                    
+                    let xAxis = chartViewEEG.xAxis
+                    xAxis.labelFont = .systemFont(ofSize: 11)
+                    xAxis.labelTextColor = textColor
+                    xAxis.drawAxisLineEnabled = true
+                    
+                    let leftAxis = chartViewEEG.leftAxis
+                    leftAxis.labelTextColor = textColor
+            //        leftAxis.axisMaximum = 55
+            //        leftAxis.axisMinimum = -5
+                    leftAxis.drawGridLinesEnabled = true
+                    leftAxis.granularityEnabled = false
+                    
+                    chartViewEEG.rightAxis.enabled = false
+                    chartViewEEG.legend.enabled = true
+                    
+                    chartViewEEG.chartDescription?.enabled = false
+                    chartViewEEG.dragEnabled = false
+                    chartViewEEG.setScaleEnabled(false)
+                    chartViewEEG.pinchZoomEnabled = false
+                    chartViewEEG.data = data // add and update
+                    
+                    EEGnew1 = false
+                    EEGnew2 = false
+                    EEGnew3 = false
+                    EEGnew4 = false
                 }
-                for i in 0..<AXYZPlot.count {
-                    let value = ChartDataEntry(x: Double(i), y: ((Double(AXYZPlot[i])-DCoffset)/divideXl)*multiXl)
-                    lineChartEntry.append(value)
-                }
-
-                let line3 = LineChartDataSet(entries: lineChartEntry, label: "Axy Z")
-                line3.colors = [AXYZColor]
-                line3.drawCirclesEnabled = false
-                line3.drawValuesEnabled = false
-                data.addDataSet(line3)
-
-                let l = chartViewAxy.legend
-                l.form = .line
-                l.font = UIFont(name: "HelveticaNeue-Light", size: 11)!
-                l.textColor = textColor
-                l.horizontalAlignment = .left
-                l.verticalAlignment = .bottom
-                l.orientation = .horizontal
-                l.drawInside = false
-                
-                let xAxis = chartViewAxy.xAxis
-                xAxis.labelFont = .systemFont(ofSize: 11)
-                xAxis.labelTextColor = textColor
-                xAxis.drawAxisLineEnabled = true
-                
-                let leftAxis = chartViewAxy.leftAxis
-                leftAxis.labelTextColor = textColor
-        //        leftAxis.axisMaximum = 55
-        //        leftAxis.axisMinimum = -5
-                leftAxis.drawGridLinesEnabled = true
-                leftAxis.granularityEnabled = false
-                
-                chartViewAxy.rightAxis.enabled = false
-                chartViewAxy.legend.enabled = true
-                
-                chartViewAxy.chartDescription?.enabled = false
-                chartViewAxy.dragEnabled = false
-                chartViewAxy.setScaleEnabled(false)
-                chartViewAxy.pinchZoomEnabled = false
-                chartViewAxy.data = data // add and update
-                
-                AXYnewX = false
-                AXYnewY = false
-                AXYnewZ = false
+            } else {
+                chartViewEEG.data = nil
             }
-        } else {
-            chartViewAxy.data = nil
         }
     }
     @IBAction func SciUnitsChanged(_ sender: Any) {
