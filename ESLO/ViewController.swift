@@ -58,7 +58,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var timeOutSec: Double = 20
     var RSSITimer = Timer()
     var RSSI: NSNumber = 0
-    var terminalCount: Int = 0
+    var terminalCount: Int = 1
     var lastGraphTime: Double = 1000
     
     var BOTH_CHARTS: Int = 3
@@ -202,6 +202,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func scanBTE() {
         centralManager.scanForPeripherals(withServices: [ESLOPeripheral.ESLOServiceUUID],
                                           options: [CBCentralManagerScanOptionAllowDuplicatesKey : false])
+        updateChart(BOTH_CHARTS)
         timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeOutSec, repeats: false) { timer in
             self.cancelScan()
         }
@@ -524,7 +525,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             scanBTE()
         } else {
             if peripheral != nil {
-                centralManager?.cancelPeripheralConnection(peripheral)
+                if (DataSyncLabel.text == "Data Stale") {
+                    PushSettings(false)
+                    printESLO("Pushed disconnect [try again]")
+                } else {
+                    centralManager?.cancelPeripheralConnection(peripheral)
+                }
             }
             ConnectBtn.setTitle("Disconnect", for: .normal)
         }
