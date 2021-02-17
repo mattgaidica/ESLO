@@ -5,6 +5,7 @@
 //  Created by Matt Gaidica on 2/3/21.
 //
 // colors:  http://0xrgb.com/#flat
+// write to file: https://www.hackingwithswift.com/books/ios-swiftui/writing-data-to-the-documents-directory
 import UIKit
 import Charts
 import CoreBluetooth
@@ -59,7 +60,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var RSSITimer = Timer()
     var RSSI: NSNumber = 0
     var terminalCount: Int = 1
-    var lastGraphTime: Double = 1000
+    var EEGCount: Int = 0
     
     var BOTH_CHARTS: Int = 3
     var AXY_CHART: Int = 1
@@ -83,10 +84,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var EEG3Data: Array<Int32> = Array(repeating: 0, count: 50)
     var EEG4Data: Array<Int32> = Array(repeating: 0, count: 50)
     
-    var EEG1Plot: Array<Int32> = Array(repeating: 0, count: 350)
-    var EEG2Plot: Array<Int32> = Array(repeating: 0, count: 350)
-    var EEG3Plot: Array<Int32> = Array(repeating: 0, count: 350)
-    var EEG4Plot: Array<Int32> = Array(repeating: 0, count: 350)
+    var EEG1Plot: Array<Int32> = Array(repeating: 0, count: 1000)
+    var EEG2Plot: Array<Int32> = Array(repeating: 0, count: 1000)
+    var EEG3Plot: Array<Int32> = Array(repeating: 0, count: 1000)
+    var EEG4Plot: Array<Int32> = Array(repeating: 0, count: 1000)
     
     var EEGnew1: Bool = false
     var EEGnew2: Bool = false
@@ -392,47 +393,49 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // https://www.raywenderlich.com/7181017-unsafe-swift-using-pointers-and-interacting-with-c
         if characteristic == EEGChar {
-            let data:Data = characteristic.value!
-            let _ = data.withUnsafeBytes { pointer in
-                for n in 0..<EEG1Data.count { // assume count? !!read notif count directly
-                    let eegSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
-                    let ESLOpacket = decodeESLOPacket(eegSample)
-                    self.esloType = ESLOpacket.eslo_type
-                    switch esloType {
-                    case 2:
-                        EEG1Data[n] = ESLOpacket.eslo_data
-                    case 3:
-                        EEG2Data[n] = ESLOpacket.eslo_data
-                    case 4:
-                        EEG3Data[n] = ESLOpacket.eslo_data
-                    case 5:
-                        EEG4Data[n] = ESLOpacket.eslo_data
-                    default:
-                        break
-                    }
-                }
-            }
-            switch esloType {
-            case 2:
-                EEG1Plot.replaceSubrange(0..<EEG1Data.count, with: EEG1Data)
-                EEG1Plot.rotateLeft(positions: EEG1Data.count)
-                EEGnew1 = true
-            case 3:
-                EEG2Plot.replaceSubrange(0..<EEG2Data.count, with: EEG2Data)
-                EEG2Plot.rotateLeft(positions: EEG2Data.count)
-                EEGnew2 = true
-            case 4:
-                EEG3Plot.replaceSubrange(0..<EEG3Data.count, with: EEG3Data)
-                EEG3Plot.rotateLeft(positions: EEG3Data.count)
-                EEGnew3 = true
-            case 5:
-                EEG4Plot.replaceSubrange(0..<EEG4Data.count, with: EEG4Data)
-                EEG4Plot.rotateLeft(positions: EEG4Data.count)
-                EEGnew4 = true
-            default:
-                break
-            }
-            updateChart(EEG_CHART) // best place to call? it's going to update 4 times
+//            let data:Data = characteristic.value!
+//            let _ = data.withUnsafeBytes { pointer in
+//                for n in 0..<EEG1Data.count { // assume count? !!read notif count directly
+//                    let eegSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
+//                    let ESLOpacket = decodeESLOPacket(eegSample)
+//                    self.esloType = ESLOpacket.eslo_type
+//                    switch esloType {
+//                    case 2:
+//                        EEG1Data[n] = ESLOpacket.eslo_data
+//                    case 3:
+//                        EEG2Data[n] = ESLOpacket.eslo_data
+//                    case 4:
+//                        EEG3Data[n] = ESLOpacket.eslo_data
+//                    case 5:
+//                        EEG4Data[n] = ESLOpacket.eslo_data
+//                    default:
+//                        break
+//                    }
+//                }
+//            }
+//            switch esloType {
+//            case 2:
+//                EEG1Plot.replaceSubrange(0..<EEG1Data.count, with: EEG1Data)
+//                EEG1Plot.rotateLeft(positions: EEG1Data.count)
+//                EEGnew1 = true
+//            case 3:
+//                EEG2Plot.replaceSubrange(0..<EEG2Data.count, with: EEG2Data)
+//                EEG2Plot.rotateLeft(positions: EEG2Data.count)
+//                EEGnew2 = true
+//            case 4:
+//                EEG3Plot.replaceSubrange(0..<EEG3Data.count, with: EEG3Data)
+//                EEG3Plot.rotateLeft(positions: EEG3Data.count)
+//                EEGnew3 = true
+//            case 5:
+//                EEG4Plot.replaceSubrange(0..<EEG4Data.count, with: EEG4Data)
+//                EEG4Plot.rotateLeft(positions: EEG4Data.count)
+//                EEGnew4 = true
+//            default:
+//                break
+//            }
+            EEGCount += 1
+            ESLOTerminal.text = String(EEGCount)
+//            updateChart(EEG_CHART) // best place to call? it's going to update 4 times
         }
         if characteristic == AXYChar {
             let data:Data = characteristic.value!
@@ -537,10 +540,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     func updateChart(_ chartNum: Int){
-//        if (CACurrentMediaTime() - lastGraphTime < 100) {
-//            return
-//        }
-        
         if chartNum == AXY_CHART || chartNum == BOTH_CHARTS {
             if AxySwitch.selectedSegmentIndex > 0 {
                 if AXYnewX && AXYnewX && AXYnewX {
@@ -675,7 +674,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             DCoffset = EEG1Plot.average
                         }
                         for i in 0..<EEG1Plot.count {
-                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG1Plot[i])-DCoffset) * EEGfactor * 1000.0) //uV
+                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG1Plot[i])-DCoffset) * EEGfactor * 1000000.0) //uV
                             lineChartEntry.append(value)
                         }
                         let line1 = LineChartDataSet(entries: lineChartEntry, label: "EEG Ch1")
