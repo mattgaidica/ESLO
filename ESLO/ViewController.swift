@@ -7,13 +7,41 @@
 // colors:  http://0xrgb.com/#flat
 // write to file: https://www.hackingwithswift.com/books/ios-swiftui/writing-data-to-the-documents-directory
 import UIKit
+@IBDesignable extension UIButton {
+
+    @IBInspectable var borderWidth: CGFloat {
+        set {
+            layer.borderWidth = newValue
+        }
+        get {
+            return layer.borderWidth
+        }
+    }
+
+    @IBInspectable var cornerRadius: CGFloat {
+        set {
+            layer.cornerRadius = newValue
+        }
+        get {
+            return layer.cornerRadius
+        }
+    }
+
+    @IBInspectable var borderColor: UIColor? {
+        set {
+            guard let uiColor = newValue else { return }
+            layer.borderColor = uiColor.cgColor
+        }
+        get {
+            guard let color = layer.borderColor else { return nil }
+            return UIColor(cgColor: color)
+        }
+    }
+}
 import Charts
 import CoreBluetooth
-import Foundation
 
 class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDelegate {
-    let DEBUG: Bool = true
-    
     @IBOutlet weak var chartViewEEG: LineChartView!
     @IBOutlet weak var chartViewAxy: LineChartView!
     @IBOutlet weak var Header: UIView!
@@ -47,6 +75,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var SciUnitsSwitch: UISwitch!
     @IBOutlet weak var AxyUnitsLabel: UILabel!
     @IBOutlet weak var EEGUnitsLabel: UILabel!
+    @IBOutlet weak var ExportDataLabel: UIButton!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -55,6 +84,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     private var AXYChar: CBCharacteristic?
     private var settingsChar: CBCharacteristic?
     
+    var exportUrl: URL = URL("empty")
+    var isExporting: Bool = false
     var timeoutTimer = Timer()
     var timeOutSec: Double = 20
     var RSSITimer = Timer()
@@ -65,6 +96,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var BOTH_CHARTS: Int = 3
     var AXY_CHART: Int = 1
     var AXY_FS: Double = 1
+    var uVFactor: Double = 1000000.0
     var AXYXData: Array<Int32> = Array(repeating: 0, count: 32)
     var AXYYData: Array<Int32> = Array(repeating: 0, count: 32)
     var AXYZData: Array<Int32> = Array(repeating: 0, count: 32)
@@ -77,17 +109,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var AXYnewY: Bool = false
     var AXYnewZ: Bool = false
     
-    var EEG_CHART: Int = 2
     var EEG_FS: Double = 250
-    var EEG1Data: Array<Int32> = Array(repeating: 0, count: 50)
-    var EEG2Data: Array<Int32> = Array(repeating: 0, count: 50)
-    var EEG3Data: Array<Int32> = Array(repeating: 0, count: 50)
-    var EEG4Data: Array<Int32> = Array(repeating: 0, count: 50)
+    var EEG_CHART: Int = 2
+    var EEG1Data: Array<Int32> = Array(repeating: 0, count: 62)
+    var EEG2Data: Array<Int32> = Array(repeating: 0, count: 62)
+    var EEG3Data: Array<Int32> = Array(repeating: 0, count: 62)
+    var EEG4Data: Array<Int32> = Array(repeating: 0, count: 62)
     
-    var EEG1Plot: Array<Int32> = Array(repeating: 0, count: 1000)
-    var EEG2Plot: Array<Int32> = Array(repeating: 0, count: 1000)
-    var EEG3Plot: Array<Int32> = Array(repeating: 0, count: 1000)
-    var EEG4Plot: Array<Int32> = Array(repeating: 0, count: 1000)
+    var EEG1Plot: Array<Int32> = Array(repeating: 0, count: 248*3)
+    var EEG2Plot: Array<Int32> = Array(repeating: 0, count: 248*3)
+    var EEG3Plot: Array<Int32> = Array(repeating: 0, count: 248*3)
+    var EEG4Plot: Array<Int32> = Array(repeating: 0, count: 248*3)
     
     var EEGnew1: Bool = false
     var EEGnew2: Bool = false
@@ -103,7 +135,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // Other
     let pasteboard = UIPasteboard.general
-    var curSettings: ESLO_Settings! = ESLO_Settings()
+    var iosSettings: ESLO_Settings! = ESLO_Settings()
     var esloSettings: ESLO_Settings! = ESLO_Settings()
     
     // Properties
@@ -140,9 +172,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        if DEBUG == false {
-            overlayOn()
-        }
+        overlayOn()
         print("View loaded")
         Header.setTwoGradient(colorOne: UIColor.purple, colorTwo: UIColor.blue)
 //        updateChart() // !! init chart?
@@ -230,11 +260,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         let seconds = UInt32(diffComponents.second!)
         let hexDateString = String(format: "0x%llX", seconds)
         
-        // set curSettings
-        curSettings.Time1 = UInt8(seconds & 0xFF)
-        curSettings.Time2 = UInt8(seconds >> 8 & 0xFF)
-        curSettings.Time3 = UInt8(seconds >> 16 & 0xFF)
-        curSettings.Time4 = UInt8(seconds >> 24 & 0xFF)
+        // set iosSettings
+        iosSettings.Time1 = UInt8(seconds & 0xFF)
+        iosSettings.Time2 = UInt8(seconds >> 8 & 0xFF)
+        iosSettings.Time3 = UInt8(seconds >> 16 & 0xFF)
+        iosSettings.Time4 = UInt8(seconds >> 24 & 0xFF)
         
         return hexDateString
     }
@@ -276,7 +306,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             DeviceView.backgroundColor = UIColor(hex: "#27ae60ff") // green
             ConnectBtn.setTitle("Disconnect", for: .normal)
             self.startReadRSSI()
-            peripheral.discoverServices([ESLOPeripheral.ESLOServiceUUID]);
+            peripheral.discoverServices([ESLOPeripheral.ESLOServiceUUID])
             print("Connected to ESLO")
             printESLO("Connected to ESLO device")
             overlayOff()
@@ -290,7 +320,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if let services = peripheral.services {
             for service in services {
                 if service.uuid == ESLOPeripheral.ESLOServiceUUID {
-                    print("LED service found")
+                    print("Service found")
                     peripheral.discoverCharacteristics([ESLOPeripheral.LEDCharacteristicUUID, ESLOPeripheral.vitalsCharacteristicUUID, ESLOPeripheral.settingsCharacteristicUUID, ESLOPeripheral.EEGCharacteristicUUID,
                                                         ESLOPeripheral.AXYCharacteristicUUID], for: service)
                 }
@@ -383,96 +413,128 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     rawSettings[n] = pointer.load(fromByteOffset:n, as: UInt8.self)
                 }
             }
-            curSettings = decodeESLOSettings(rawSettings)
-            esloSettings = curSettings
+            iosSettings = decodeESLOSettings(rawSettings)
+            esloSettings = iosSettings
             settingsUpdate()
             PushActivityIndicator.stopAnimating()
             PushButton.isEnabled = true
             PushButton.alpha = 1
             dataSynced()
+            if isExporting {
+                let activityViewController = UIActivityViewController(activityItems: [exportUrl], applicationActivities: nil)
+                present(activityViewController, animated: true, completion: nil)
+                isExporting = false
+            }
         }
         // https://www.raywenderlich.com/7181017-unsafe-swift-using-pointers-and-interacting-with-c
         if characteristic == EEGChar {
-//            let data:Data = characteristic.value!
-//            let _ = data.withUnsafeBytes { pointer in
-//                for n in 0..<EEG1Data.count { // assume count? !!read notif count directly
-//                    let eegSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
-//                    let ESLOpacket = decodeESLOPacket(eegSample)
-//                    self.esloType = ESLOpacket.eslo_type
-//                    switch esloType {
-//                    case 2:
-//                        EEG1Data[n] = ESLOpacket.eslo_data
-//                    case 3:
-//                        EEG2Data[n] = ESLOpacket.eslo_data
-//                    case 4:
-//                        EEG3Data[n] = ESLOpacket.eslo_data
-//                    case 5:
-//                        EEG4Data[n] = ESLOpacket.eslo_data
-//                    default:
-//                        break
-//                    }
-//                }
-//            }
-//            switch esloType {
-//            case 2:
-//                EEG1Plot.replaceSubrange(0..<EEG1Data.count, with: EEG1Data)
-//                EEG1Plot.rotateLeft(positions: EEG1Data.count)
-//                EEGnew1 = true
-//            case 3:
-//                EEG2Plot.replaceSubrange(0..<EEG2Data.count, with: EEG2Data)
-//                EEG2Plot.rotateLeft(positions: EEG2Data.count)
-//                EEGnew2 = true
-//            case 4:
-//                EEG3Plot.replaceSubrange(0..<EEG3Data.count, with: EEG3Data)
-//                EEG3Plot.rotateLeft(positions: EEG3Data.count)
-//                EEGnew3 = true
-//            case 5:
-//                EEG4Plot.replaceSubrange(0..<EEG4Data.count, with: EEG4Data)
-//                EEG4Plot.rotateLeft(positions: EEG4Data.count)
-//                EEGnew4 = true
-//            default:
-//                break
-//            }
-            EEGCount += 1
-            ESLOTerminal.text = String(EEGCount)
-//            updateChart(EEG_CHART) // best place to call? it's going to update 4 times
-        }
-        if characteristic == AXYChar {
             let data:Data = characteristic.value!
             let _ = data.withUnsafeBytes { pointer in
-                for n in 0..<AXYXData.count { // assume count? !!read notif count directly
-                    let axySample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
-                    let ESLOpacket = decodeESLOPacket(axySample)
+                for n in 0..<EEG1Data.count {
+                    let eegSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
+                    let ESLOpacket = decodeESLOPacket(eegSample)
                     self.esloType = ESLOpacket.eslo_type
                     switch esloType {
-                    case 7:
-                        AXYXData[n] = ESLOpacket.eslo_data
-                    case 8:
-                        AXYYData[n] = ESLOpacket.eslo_data
-                    case 9:
-                        AXYZData[n] = ESLOpacket.eslo_data
+                    case 2:
+                        EEG1Data[n] = ESLOpacket.eslo_data
+                    case 3:
+                        EEG2Data[n] = ESLOpacket.eslo_data
+                    case 4:
+                        EEG3Data[n] = ESLOpacket.eslo_data
+                    case 5:
+                        EEG4Data[n] = ESLOpacket.eslo_data
                     default:
                         break
                     }
                 }
             }
             switch esloType {
-            case 7:
-                AXYXPlot.replaceSubrange(0..<AXYXData.count, with: AXYXData)
-                AXYXPlot.rotateLeft(positions: AXYXData.count)
-                AXYnewX = true
-            case 8:
-                AXYYPlot.replaceSubrange(0..<AXYYData.count, with: AXYYData)
-                AXYYPlot.rotateLeft(positions: AXYYData.count)
-                AXYnewY = true
-            case 9:
-                AXYZPlot.replaceSubrange(0..<AXYZData.count, with: AXYZData)
-                AXYZPlot.rotateLeft(positions: AXYZData.count)
-                AXYnewZ = true
+            case 2:
+                EEG1Plot.replaceSubrange(0..<EEG1Data.count, with: EEG1Data)
+                EEG1Plot.rotateLeft(positions: EEG1Data.count)
+                EEGnew1 = true
+            case 3:
+                EEG2Plot.replaceSubrange(0..<EEG2Data.count, with: EEG2Data)
+                EEG2Plot.rotateLeft(positions: EEG2Data.count)
+                EEGnew2 = true
+            case 4:
+                EEG3Plot.replaceSubrange(0..<EEG3Data.count, with: EEG3Data)
+                EEG3Plot.rotateLeft(positions: EEG3Data.count)
+                EEGnew3 = true
+            case 5:
+                EEG4Plot.replaceSubrange(0..<EEG4Data.count, with: EEG4Data)
+                EEG4Plot.rotateLeft(positions: EEG4Data.count)
+                EEGnew4 = true
             default:
                 break
             }
-            updateChart(AXY_CHART) // best place to call? it's going to update 4 times
+            updateChart(EEG_CHART)
+        }
+        if characteristic == AXYChar {
+            if iosSettings.ExportData > 0 { // exporting data mode
+                isExporting = true
+                print("exporting")
+                let data:Data = characteristic.value!
+//                let _ = data.withUnsafeBytes { pointer in
+//                    for n in 0..<AXYXData.count {
+//                        let exportSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
+                if FileManager.default.fileExists(atPath: exportUrl.path) {
+                    if let fileHandle = try? FileHandle(forWritingTo: exportUrl) {
+                        fileHandle.seekToEndOfFile()
+                        fileHandle.write(data)
+                        fileHandle.closeFile()
+                    }
+                } else {
+                    try? data.write(to: exportUrl, options: .atomicWrite)
+                }
+                
+//                if let fileUpdater = try? FileHandle(forUpdating: self.exportUrl) {
+//                            // Function which when called will cause all updates to start from end of the file
+//                            fileUpdater.seekToEndOfFile()
+//                            // Which lets the caller move editing to any position within the file by supplying an offset
+//                            fileUpdater.write(monkeyLine.data(using: .utf8)!)
+//                            // Once we convert our new content to data and write it, we close the file and that’s it!
+//                            fileUpdater.closeFile()
+////                        }
+////                    }
+//                }
+            } else { // normal axy mode
+                let data:Data = characteristic.value!
+                let _ = data.withUnsafeBytes { pointer in
+                    for n in 0..<AXYXData.count { // assume count? !!read notif count directly
+                        let axySample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
+                        let ESLOpacket = decodeESLOPacket(axySample)
+                        self.esloType = ESLOpacket.eslo_type
+                        switch esloType {
+                        case 7:
+                            AXYXData[n] = ESLOpacket.eslo_data
+                        case 8:
+                            AXYYData[n] = ESLOpacket.eslo_data
+                        case 9:
+                            AXYZData[n] = ESLOpacket.eslo_data
+                        default:
+                            break
+                        }
+                    }
+                }
+                switch esloType {
+                case 7:
+                    AXYXPlot.replaceSubrange(0..<AXYXData.count, with: AXYXData)
+                    AXYXPlot.rotateLeft(positions: AXYXData.count)
+                    AXYnewX = true
+                case 8:
+                    AXYYPlot.replaceSubrange(0..<AXYYData.count, with: AXYYData)
+                    AXYYPlot.rotateLeft(positions: AXYYData.count)
+                    AXYnewY = true
+                case 9:
+                    AXYZPlot.replaceSubrange(0..<AXYZData.count, with: AXYZData)
+                    AXYZPlot.rotateLeft(positions: AXYZData.count)
+                    AXYnewZ = true
+                default:
+                    break
+                }
+                updateChart(AXY_CHART) // best place to call? it's going to update 4 times
+            }
         }
     }
     
@@ -556,7 +618,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     
                     DCoffset = 0
                     if RmOffsetSwitch.isOn {
-                        DCoffset = AXYXPlot.average
+                        DCoffset = (AXYXPlot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
                     }
                     for i in 0..<AXYXPlot.count {
                         let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYXPlot[i])-DCoffset)/divideXl)*multiXl)
@@ -571,7 +633,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     var lineChartEntry = [ChartDataEntry]()
                     DCoffset = 0
                     if RmOffsetSwitch.isOn {
-                        DCoffset = AXYYPlot.average
+                        DCoffset = (AXYYPlot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
                     }
                     for i in 0..<AXYYPlot.count {
                         let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYYPlot[i])-DCoffset)/divideXl)*multiXl)
@@ -587,7 +649,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     lineChartEntry = [ChartDataEntry]()
                     DCoffset = 0
                     if RmOffsetSwitch.isOn {
-                        DCoffset = AXYZPlot.average
+                        DCoffset = (AXYZPlot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
                     }
                     for i in 0..<AXYZPlot.count {
                         let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYZPlot[i])-DCoffset)/divideXl)*multiXl)
@@ -643,19 +705,19 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             if EEG1Switch.isOn || EEG2Switch.isOn || EEG3Switch.isOn || EEG4Switch.isOn {
                 var EEG1gate: Bool = true
                 if EEG1Switch.isOn && !EEGnew1 {
-                    EEG1gate = false;
+                    EEG1gate = false
                 }
                 var EEG2gate: Bool = true
                 if EEG2Switch.isOn && !EEGnew2 {
-                    EEG2gate = false;
+                    EEG2gate = false
                 }
                 var EEG3gate: Bool = true
                 if EEG3Switch.isOn && !EEGnew3 {
-                    EEG3gate = false;
+                    EEG3gate = false
                 }
                 var EEG4gate: Bool = true
                 if EEG4Switch.isOn && !EEGnew4 {
-                    EEG4gate = false;
+                    EEG4gate = false
                 }
                 
                 if EEG1gate && EEG2gate && EEG3gate && EEG4gate {
@@ -664,17 +726,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     // +/-Vref = 3, gain = 12, 24-bit resolution
                     var EEGfactor: Double = 1.0
                     if SciUnitsSwitch.isOn {
-                        EEGfactor = ((3/12) / Double(UInt32(0xFFFFFF)))
+                        EEGfactor = ((3/12) / Double(UInt32(0xFFFFFF))) * uVFactor
                     }
                     
                     if EEG1Switch.isOn {
                         lineChartEntry = [ChartDataEntry]()
                         DCoffset = 0
                         if RmOffsetSwitch.isOn {
-                            DCoffset = EEG1Plot.average
+                            DCoffset = (EEG1Plot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
                         }
                         for i in 0..<EEG1Plot.count {
-                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG1Plot[i])-DCoffset) * EEGfactor * 1000000.0) //uV
+                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG1Plot[i])-DCoffset) * EEGfactor) //uV
                             lineChartEntry.append(value)
                         }
                         let line1 = LineChartDataSet(entries: lineChartEntry, label: "EEG Ch1")
@@ -687,10 +749,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         lineChartEntry = [ChartDataEntry]()
                         DCoffset = 0
                         if RmOffsetSwitch.isOn {
-                            DCoffset = EEG2Plot.average
+                            DCoffset = (EEG2Plot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
                         }
                         for i in 0..<EEG2Plot.count {
-                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG2Plot[i])-DCoffset) * EEGfactor * 1000000.0) //uV
+                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG2Plot[i])-DCoffset) * EEGfactor) //uV
                             lineChartEntry.append(value)
                         }
 
@@ -704,10 +766,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         lineChartEntry = [ChartDataEntry]()
                         DCoffset = 0
                         if RmOffsetSwitch.isOn {
-                            DCoffset = EEG3Plot.average
+                            DCoffset = (EEG3Plot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
                         }
                         for i in 0..<EEG3Plot.count {
-                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG3Plot[i])-DCoffset) * EEGfactor * 1000000.0) //uV
+                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG3Plot[i])-DCoffset) * EEGfactor) //uV
                             lineChartEntry.append(value)
                         }
 
@@ -721,10 +783,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         lineChartEntry = [ChartDataEntry]()
                         DCoffset = 0
                         if RmOffsetSwitch.isOn {
-                            DCoffset = EEG4Plot.average
+                            DCoffset = (EEG4Plot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
                         }
                         for i in 0..<EEG4Plot.count {
-                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG4Plot[i])-DCoffset) * EEGfactor * 1000000.0) //mV
+                            let value = ChartDataEntry(x: Double(i) / EEG_FS, y: (Double(EEG4Plot[i])-DCoffset) * EEGfactor) //uV
                             lineChartEntry.append(value)
                         }
 
@@ -786,33 +848,34 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     func settingsUpdate() { // from ESLO
-        SleepWakeSwitch.isOn = curSettings.SleepWake.boolValue
-        DutySlider.value = Float(dutyArr.firstIndex(of: Int(curSettings.EEGDuty))!)
+        SleepWakeSwitch.isOn = iosSettings.SleepWake.boolValue
+        DutySlider.value = Float(dutyArr.firstIndex(of: Int(iosSettings.EEGDuty))!)
         updateDutyLabel()
-        DurationSlider.value = Float(durationArr.firstIndex(of: Int(curSettings.EEGDuration))!)
+        DurationSlider.value = Float(durationArr.firstIndex(of: Int(iosSettings.EEGDuration))!)
         updateDurationLabel()
-        EEG1Switch.isOn = curSettings.EEG1.boolValue
-        EEG2Switch.isOn = curSettings.EEG2.boolValue
-        EEG3Switch.isOn = curSettings.EEG3.boolValue
-        EEG4Switch.isOn = curSettings.EEG4.boolValue
-        AxySwitch.selectedSegmentIndex = Int(curSettings.AxyMode)
-        TxPowerStepper.value = Double(Int(curSettings.TxPower))
+        EEG1Switch.isOn = iosSettings.EEG1.boolValue
+        EEG2Switch.isOn = iosSettings.EEG2.boolValue
+        EEG3Switch.isOn = iosSettings.EEG3.boolValue
+        EEG4Switch.isOn = iosSettings.EEG4.boolValue
+        AxySwitch.selectedSegmentIndex = Int(iosSettings.AxyMode)
+        TxPowerStepper.value = Double(Int(iosSettings.TxPower))
         updateTxLabel()
+        updateExportLabel()
     }
     @IBAction func SettingsChanged(_ sender: Any) { // triggered by most UI changes
-        curSettings.SleepWake = SleepWakeSwitch.isOn.uint8Value
-        curSettings.EEGDuty = UInt8(dutyArr[Int(DutySlider.value)])
-        curSettings.EEGDuration = UInt8(durationArr[Int(DurationSlider.value)])
-        curSettings.EEG1 = EEG1Switch.isOn.uint8Value
-        curSettings.EEG2 = EEG2Switch.isOn.uint8Value
-        curSettings.EEG3 = EEG3Switch.isOn.uint8Value
-        curSettings.EEG4 = EEG4Switch.isOn.uint8Value
-        curSettings.AxyMode = UInt8(AxySwitch.selectedSegmentIndex)
-        curSettings.TxPower = UInt8(TxPowerStepper.value)
+        iosSettings.SleepWake = SleepWakeSwitch.isOn.uint8Value
+        iosSettings.EEGDuty = UInt8(dutyArr[Int(DutySlider.value)])
+        iosSettings.EEGDuration = UInt8(durationArr[Int(DurationSlider.value)])
+        iosSettings.EEG1 = EEG1Switch.isOn.uint8Value
+        iosSettings.EEG2 = EEG2Switch.isOn.uint8Value
+        iosSettings.EEG3 = EEG3Switch.isOn.uint8Value
+        iosSettings.EEG4 = EEG4Switch.isOn.uint8Value
+        iosSettings.AxyMode = UInt8(AxySwitch.selectedSegmentIndex)
+        iosSettings.TxPower = UInt8(TxPowerStepper.value)
         dataSynced()
     }
     func dataSynced() {
-        if compareESLOSettings(curSettings, esloSettings) {
+        if compareESLOSettings(iosSettings, esloSettings) {
             DataSyncLabel.text = "Data Synced"
             DataSyncLabel.textColor = .black
         } else {
@@ -826,13 +889,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             PushButton.isEnabled = false
             PushButton.alpha = 0.25
             PushActivityIndicator.startAnimating()
-            var uintSettings = encodeESLOSettings(curSettings)
+            var uintSettings = encodeESLOSettings(iosSettings)
             let ptr = UnsafeMutablePointer<UInt8>.allocate(capacity: uintSettings.count)
             ptr.initialize(from: &uintSettings, count: uintSettings.count)
             let data = Data(buffer: UnsafeBufferPointer(start: ptr, count: uintSettings.count))
             peripheral.writeValue(data, for: settingsChar!, type: .withResponse)
-            printESLO("Settings pushed")
-            peripheral.readValue(for: settingsChar!) // force readValue callback
+            printESLO("Settings pushed") // will notify from ESLO
         }
     }
     
@@ -878,5 +940,42 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         let sliderIdx = Int(DurationSlider.value)
         DurationLabel.text = String(durationArr[sliderIdx]) + " min"
         DurationSlider.value = Float(sliderIdx)
+    }
+    
+    func updateExportLabel() {
+        if iosSettings.ExportData > 0 {
+            ExportDataLabel.setTitle("Exporting...", for: .normal)
+        } else {
+            ExportDataLabel.setTitle("Export Data", for: .normal)
+        }
+    }
+    @IBAction func ExportDataButton(_ sender: Any) {
+        iosSettings.ExportData = 0x01 // will override other settings on ESLO
+        updateExportLabel()
+        PushSettings(false)
+        exportUrl = self.getDocumentsDirectory().appendingPathComponent("ESLO.txt")
+        do {
+            try FileManager.default.removeItem(at: exportUrl)
+        } catch let error as NSError {
+            print("Error: \(error.domain)")
+        }
+//        let str = "Hello World!!!!!"
+//        do {
+//            try str.write(to: url, atomically: true, encoding: .utf8)
+//            let input = try String(contentsOf: url)
+//            print(input)
+//        } catch {
+//            print(error.localizedDescription)
+//        }
+
+    }
+    //https://www.hackingwithswift.com/books/ios-swiftui/writing-data-to-the-documents-directory
+    //https://stackoverflow.com/questions/50128462/how-to-save-document-to-files-app-in-swift
+    //https://stackoverflow.com/questions/27327067/append-text-or-data-to-text-file-in-swift
+    func getDocumentsDirectory() -> URL {
+        // find all possible documents directories for this user
+        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        // just send back the first one, which ought to be the only one
+        return paths[0]
     }
 }

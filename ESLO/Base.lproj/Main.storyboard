@@ -90,6 +90,29 @@
                                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <nil key="highlightedColor"/>
                                     </label>
+                                    <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="2dw-j0-Fsi">
+                                        <rect key="frame" x="321" y="8" width="96" height="26"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                        <state key="normal" title="Export Data">
+                                            <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        </state>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
+                                                <color key="value" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
+                                                <real key="value" value="1"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="5"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="ExportDataButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="Q87-1W-enu"/>
+                                        </connections>
+                                    </button>
                                 </subviews>
                                 <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </view>
@@ -426,6 +449,7 @@
                         <outlet property="EEG4Switch" destination="jyD-gG-BVx" id="ERj-gB-60q"/>
                         <outlet property="EEGUnitsLabel" destination="MDJ-gA-Yam" id="Fj0-Xv-aCI"/>
                         <outlet property="ESLOTerminal" destination="9AW-5R-l84" id="1cD-93-0bp"/>
+                        <outlet property="ExportDataLabel" destination="2dw-j0-Fsi" id="pHg-VO-qH9"/>
                         <outlet property="Header" destination="0vT-a1-6PY" id="lGU-WN-Mi9"/>
                         <outlet property="HexTimeLabel" destination="8kE-9w-4Fc" id="tqn-iP-Emc"/>
                         <outlet property="LEDSwitch" destination="BJs-Yq-YbP" id="yeR-eT-5Bb"/>

@@ -21,6 +21,7 @@ struct ESLO_Settings {
     var Time2       = UInt8(0)
     var Time3       = UInt8(0)
     var Time4       = UInt8(0)
+    var ExportData       = UInt8(0)
 };
 
 func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings) -> Bool {
@@ -52,6 +53,10 @@ func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings)
     if settings1.TxPower != settings2.TxPower {
         ret = false
     }
+    // do nothing with TimeX
+    if settings1.ExportData != settings2.ExportData {
+        ret = false
+    }
     
     return ret
 }
@@ -71,6 +76,7 @@ func encodeESLOSettings(_ settings: ESLO_Settings) -> [UInt8] {
     rawSettings[10] = settings.Time2
     rawSettings[11] = settings.Time3
     rawSettings[12] = settings.Time4
+    rawSettings[13] = settings.ExportData
     return rawSettings
 }
 
@@ -89,6 +95,7 @@ func decodeESLOSettings(_ settings: [UInt8]) -> ESLO_Settings {
     newSettings.Time2           = settings[10]
     newSettings.Time3           = settings[11]
     newSettings.Time4           = settings[12]
+    newSettings.ExportData      = settings[13]
     
     return newSettings
 }
