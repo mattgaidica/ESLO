@@ -84,6 +84,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     private var AXYChar: CBCharacteristic?
     private var settingsChar: CBCharacteristic?
     
+    var exportCount: Int = 0
     var exportUrl: URL = URL("empty")
     var isExporting: Bool = false
     var timeoutTimer = Timer()
@@ -423,6 +424,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             if isExporting {
                 let activityViewController = UIActivityViewController(activityItems: [exportUrl], applicationActivities: nil)
                 present(activityViewController, animated: true, completion: nil)
+                printESLO("Done exporting")
                 isExporting = false
             }
         }
@@ -475,9 +477,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 isExporting = true
                 print("exporting")
                 let data:Data = characteristic.value!
-//                let _ = data.withUnsafeBytes { pointer in
-//                    for n in 0..<AXYXData.count {
-//                        let exportSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
+                exportCount += data.count
+                printESLO("Exported " + exportCount.byteSize)
                 if FileManager.default.fileExists(atPath: exportUrl.path) {
                     if let fileHandle = try? FileHandle(forWritingTo: exportUrl) {
                         fileHandle.seekToEndOfFile()
@@ -487,17 +488,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 } else {
                     try? data.write(to: exportUrl, options: .atomicWrite)
                 }
-                
-//                if let fileUpdater = try? FileHandle(forUpdating: self.exportUrl) {
-//                            // Function which when called will cause all updates to start from end of the file
-//                            fileUpdater.seekToEndOfFile()
-//                            // Which lets the caller move editing to any position within the file by supplying an offset
-//                            fileUpdater.write(monkeyLine.data(using: .utf8)!)
-//                            // Once we convert our new content to data and write it, we close the file and that’s it!
-//                            fileUpdater.closeFile()
-////                        }
-////                    }
-//                }
             } else { // normal axy mode
                 let data:Data = characteristic.value!
                 let _ = data.withUnsafeBytes { pointer in
@@ -953,29 +943,21 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         iosSettings.ExportData = 0x01 // will override other settings on ESLO
         updateExportLabel()
         PushSettings(false)
-        exportUrl = self.getDocumentsDirectory().appendingPathComponent("ESLO.txt")
-        do {
-            try FileManager.default.removeItem(at: exportUrl)
-        } catch let error as NSError {
-            print("Error: \(error.domain)")
-        }
-//        let str = "Hello World!!!!!"
-//        do {
-//            try str.write(to: url, atomically: true, encoding: .utf8)
-//            let input = try String(contentsOf: url)
-//            print(input)
-//        } catch {
-//            print(error.localizedDescription)
-//        }
-
+        rmESLOFiles()
+        let date = Date()
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
+        exportUrl = self.getDocumentsDirectory().appendingPathComponent("ESLO_" + dateFormatter.string(from: date) + ".txt")
     }
     //https://www.hackingwithswift.com/books/ios-swiftui/writing-data-to-the-documents-directory
     //https://stackoverflow.com/questions/50128462/how-to-save-document-to-files-app-in-swift
     //https://stackoverflow.com/questions/27327067/append-text-or-data-to-text-file-in-swift
     func getDocumentsDirectory() -> URL {
-        // find all possible documents directories for this user
-        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        // just send back the first one, which ought to be the only one
-        return paths[0]
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+    }
+    @IBAction func ResetVersionButton(_ sender: Any) {
+        iosSettings.ResetVersion = 0x01
+        PushSettings(false)
+        printESLO("Version reset")
     }
 }

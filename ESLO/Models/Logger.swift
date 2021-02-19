@@ -8,7 +8,6 @@
 import Foundation
 
 class Logger {
-
     static var logFile: URL? {
         guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
         let formatter = DateFormatter()

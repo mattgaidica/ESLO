@@ -8,6 +8,12 @@
 import Foundation
 import UIKit
 
+extension Int {
+    var byteSize: String {
+        return ByteCountFormatter().string(fromByteCount: Int64(self))
+    }
+}
+
 extension URL {
     init(_ string: StaticString) {
         self.init(string: "\(string)")!
