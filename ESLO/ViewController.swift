@@ -102,9 +102,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var AXYYData: Array<Int32> = Array(repeating: 0, count: 32)
     var AXYZData: Array<Int32> = Array(repeating: 0, count: 32)
     
-    var AXYXPlot: Array<Int32> = Array(repeating: 0, count: 32)
-    var AXYYPlot: Array<Int32> = Array(repeating: 0, count: 32)
-    var AXYZPlot: Array<Int32> = Array(repeating: 0, count: 32)
+    var AXYXPlot: Array<Int32> = Array(repeating: 0, count: 32*5)
+    var AXYYPlot: Array<Int32> = Array(repeating: 0, count: 32*5)
+    var AXYZPlot: Array<Int32> = Array(repeating: 0, count: 32*5)
     
     var AXYnewX: Bool = false
     var AXYnewY: Bool = false
