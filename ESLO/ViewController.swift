@@ -76,6 +76,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var AxyUnitsLabel: UILabel!
     @IBOutlet weak var EEGUnitsLabel: UILabel!
     @IBOutlet weak var ExportDataLabel: UIButton!
+    @IBOutlet weak var ThermLabel: UILabel!
+    @IBOutlet weak var ThermBar: UIProgressView!
+    @IBOutlet weak var ThermFLabel: UILabel!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -83,6 +86,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     private var EEGChar: CBCharacteristic?
     private var AXYChar: CBCharacteristic?
     private var settingsChar: CBCharacteristic?
+    private var thermChar: CBCharacteristic?
     
     var exportCount: Int = 0
     var exportUrl: URL = URL("empty")
@@ -323,7 +327,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if service.uuid == ESLOPeripheral.ESLOServiceUUID {
                     print("Service found")
                     peripheral.discoverCharacteristics([ESLOPeripheral.LEDCharacteristicUUID, ESLOPeripheral.vitalsCharacteristicUUID, ESLOPeripheral.settingsCharacteristicUUID, ESLOPeripheral.EEGCharacteristicUUID,
-                                                        ESLOPeripheral.AXYCharacteristicUUID], for: service)
+                                                        ESLOPeripheral.AXYCharacteristicUUID,ESLOPeripheral.thermCharacteristicUUID], for: service)
                 }
             }
         }
@@ -350,6 +354,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     print("Battery characteristic found")
                     printESLO("Found vBatt")
                     battChar = characteristic
+                    peripheral.setNotifyValue(true, for: characteristic)
+                }
+                if characteristic.uuid == ESLOPeripheral.thermCharacteristicUUID {
+                    print("Therm characteristic found")
+                    printESLO("Found Therm")
+                    thermChar = characteristic
                     peripheral.setNotifyValue(true, for: characteristic)
                 }
                 if characteristic.uuid == ESLOPeripheral.settingsCharacteristicUUID {
@@ -405,6 +415,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 BatteryBar.progress = vBatt.converting(from: 2.5...3.0, to: 0.0...1.0)
             }
         }
+        if characteristic == thermChar {
+            let data:Data = characteristic.value! //get a data object from the CBCharacteristic
+            // same method call, without type annotations
+            let _ = data.withUnsafeBytes { pointer in
+                let temp_C = Float(pointer.load(as: Int32.self)) / 1000000
+                if temp_C < 100 && temp_C > 0 {
+                    let formatString = NSLocalizedString("%2.1f°C", comment: "therm")
+                    ThermLabel.text = String(format: formatString, temp_C)
+                    let formatStringF = NSLocalizedString("%2.1f°F", comment: "therm")
+                    ThermBar.progress = temp_C.converting(from: 20...40, to: 0.0...1.0)
+                    ThermFLabel.text = String(format: formatStringF, temp_C * 1.8 + 32)
+                } else {
+                    ThermLabel.text = "--.-°C"
+                    ThermFLabel.text = "--.-°F"
+                    ThermBar.progress = 0.5
+                }
+            }
+        }
         if characteristic == settingsChar {
             let initSettings: ESLO_Settings! = ESLO_Settings()
             var rawSettings = encodeESLOSettings(initSettings)
@@ -426,6 +454,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 present(activityViewController, animated: true, completion: nil)
                 printESLO("Done exporting")
                 isExporting = false
+                exportCount = 0
             }
         }
         // https://www.raywenderlich.com/7181017-unsafe-swift-using-pointers-and-interacting-with-c
@@ -548,6 +577,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             EEGChar = nil
             AXYChar = nil
             settingsChar = nil
+            thermChar = nil
             terminalCount = 1
         }
     }
