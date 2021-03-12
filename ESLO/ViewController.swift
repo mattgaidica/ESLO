@@ -79,6 +79,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var ThermLabel: UILabel!
     @IBOutlet weak var ThermBar: UIProgressView!
     @IBOutlet weak var ThermFLabel: UILabel!
+    @IBOutlet weak var CompassRose: UIImageView!
+    @IBOutlet weak var MgXLabel: UILabel!
+    @IBOutlet weak var MgYLabel: UILabel!
+    @IBOutlet weak var MgZLabel: UILabel!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -102,17 +106,22 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var AXY_CHART: Int = 1
     var AXY_FS: Double = 1
     var uVFactor: Double = 1000000.0
-    var AXYXData: Array<Int32> = Array(repeating: 0, count: 32)
-    var AXYYData: Array<Int32> = Array(repeating: 0, count: 32)
-    var AXYZData: Array<Int32> = Array(repeating: 0, count: 32)
+    // !!was 32
+    var AXYXData: Array<Int32> = Array(repeating: 0, count: 4)
+    var AXYYData: Array<Int32> = Array(repeating: 0, count: 4)
+    var AXYZData: Array<Int32> = Array(repeating: 0, count: 4)
     
-    var AXYXPlot: Array<Int32> = Array(repeating: 0, count: 32*5)
-    var AXYYPlot: Array<Int32> = Array(repeating: 0, count: 32*5)
-    var AXYZPlot: Array<Int32> = Array(repeating: 0, count: 32*5)
+    var AXYXPlot: Array<Int32> = Array(repeating: 0, count: 4*10)
+    var AXYYPlot: Array<Int32> = Array(repeating: 0, count: 4*10)
+    var AXYZPlot: Array<Int32> = Array(repeating: 0, count: 4*10)
     
     var AXYnewX: Bool = false
     var AXYnewY: Bool = false
     var AXYnewZ: Bool = false
+    
+    var AXYmgX: Int32 = 0
+    var AXYmgY: Int32 = 0
+    var AXYmgZ: Int32 = 0
     
     var EEG_FS: Double = 250
     var EEG_CHART: Int = 2
@@ -459,55 +468,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
         // https://www.raywenderlich.com/7181017-unsafe-swift-using-pointers-and-interacting-with-c
         if characteristic == EEGChar {
-            let data:Data = characteristic.value!
-            let _ = data.withUnsafeBytes { pointer in
-                for n in 0..<EEG1Data.count {
-                    let eegSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
-                    let ESLOpacket = decodeESLOPacket(eegSample)
-                    self.esloType = ESLOpacket.eslo_type
-                    switch esloType {
-                    case 2:
-                        EEG1Data[n] = ESLOpacket.eslo_data
-                    case 3:
-                        EEG2Data[n] = ESLOpacket.eslo_data
-                    case 4:
-                        EEG3Data[n] = ESLOpacket.eslo_data
-                    case 5:
-                        EEG4Data[n] = ESLOpacket.eslo_data
-                    default:
-                        break
-                    }
-                }
-            }
-            switch esloType {
-            case 2:
-                EEG1Plot.replaceSubrange(0..<EEG1Data.count, with: EEG1Data)
-                EEG1Plot.rotateLeft(positions: EEG1Data.count)
-                EEGnew1 = true
-            case 3:
-                EEG2Plot.replaceSubrange(0..<EEG2Data.count, with: EEG2Data)
-                EEG2Plot.rotateLeft(positions: EEG2Data.count)
-                EEGnew2 = true
-            case 4:
-                EEG3Plot.replaceSubrange(0..<EEG3Data.count, with: EEG3Data)
-                EEG3Plot.rotateLeft(positions: EEG3Data.count)
-                EEGnew3 = true
-            case 5:
-                EEG4Plot.replaceSubrange(0..<EEG4Data.count, with: EEG4Data)
-                EEG4Plot.rotateLeft(positions: EEG4Data.count)
-                EEGnew4 = true
-            default:
-                break
-            }
-            updateChart(EEG_CHART)
-        }
-        if characteristic == AXYChar {
             if iosSettings.ExportData > 0 { // exporting data mode
                 isExporting = true
-                print("exporting")
+//                print("exporting")
                 let data:Data = characteristic.value!
                 exportCount += data.count
-                printESLO("Exported " + exportCount.byteSize)
+                if ((exportCount % 1000) == 0) {
+                    printESLO("Exported " + exportCount.byteSize)
+                }
                 if FileManager.default.fileExists(atPath: exportUrl.path) {
                     if let fileHandle = try? FileHandle(forWritingTo: exportUrl) {
                         fileHandle.seekToEndOfFile()
@@ -517,43 +485,98 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 } else {
                     try? data.write(to: exportUrl, options: .atomicWrite)
                 }
-            } else { // normal axy mode
+            } else {
                 let data:Data = characteristic.value!
                 let _ = data.withUnsafeBytes { pointer in
-                    for n in 0..<AXYXData.count { // assume count? !!read notif count directly
-                        let axySample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
-                        let ESLOpacket = decodeESLOPacket(axySample)
+                    for n in 0..<EEG1Data.count {
+                        let eegSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
+                        let ESLOpacket = decodeESLOPacket(eegSample)
                         self.esloType = ESLOpacket.eslo_type
                         switch esloType {
-                        case 7:
-                            AXYXData[n] = ESLOpacket.eslo_data
-                        case 8:
-                            AXYYData[n] = ESLOpacket.eslo_data
-                        case 9:
-                            AXYZData[n] = ESLOpacket.eslo_data
+                        case 2:
+                            EEG1Data[n] = ESLOpacket.eslo_data
+                        case 3:
+                            EEG2Data[n] = ESLOpacket.eslo_data
+                        case 4:
+                            EEG3Data[n] = ESLOpacket.eslo_data
+                        case 5:
+                            EEG4Data[n] = ESLOpacket.eslo_data
                         default:
                             break
                         }
                     }
                 }
                 switch esloType {
-                case 7:
-                    AXYXPlot.replaceSubrange(0..<AXYXData.count, with: AXYXData)
-                    AXYXPlot.rotateLeft(positions: AXYXData.count)
-                    AXYnewX = true
-                case 8:
-                    AXYYPlot.replaceSubrange(0..<AXYYData.count, with: AXYYData)
-                    AXYYPlot.rotateLeft(positions: AXYYData.count)
-                    AXYnewY = true
-                case 9:
-                    AXYZPlot.replaceSubrange(0..<AXYZData.count, with: AXYZData)
-                    AXYZPlot.rotateLeft(positions: AXYZData.count)
-                    AXYnewZ = true
+                case 2:
+                    EEG1Plot.replaceSubrange(0..<EEG1Data.count, with: EEG1Data)
+                    EEG1Plot.rotateLeft(positions: EEG1Data.count)
+                    EEGnew1 = true
+                case 3:
+                    EEG2Plot.replaceSubrange(0..<EEG2Data.count, with: EEG2Data)
+                    EEG2Plot.rotateLeft(positions: EEG2Data.count)
+                    EEGnew2 = true
+                case 4:
+                    EEG3Plot.replaceSubrange(0..<EEG3Data.count, with: EEG3Data)
+                    EEG3Plot.rotateLeft(positions: EEG3Data.count)
+                    EEGnew3 = true
+                case 5:
+                    EEG4Plot.replaceSubrange(0..<EEG4Data.count, with: EEG4Data)
+                    EEG4Plot.rotateLeft(positions: EEG4Data.count)
+                    EEGnew4 = true
                 default:
                     break
                 }
-                updateChart(AXY_CHART) // best place to call? it's going to update 4 times
+                updateChart(EEG_CHART)
             }
+        }
+        if characteristic == AXYChar {
+            let data:Data = characteristic.value!
+            let _ = data.withUnsafeBytes { pointer in
+                for n in 0..<AXYXData.count { // assume count? !!read notif count directly
+                    let axySample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
+                    let ESLOpacket = decodeESLOPacket(axySample)
+                    self.esloType = ESLOpacket.eslo_type
+                    switch esloType {
+                    case 7:
+                        AXYXData[n] = ESLOpacket.eslo_data
+                    case 8:
+                        AXYYData[n] = ESLOpacket.eslo_data
+                    case 9:
+                        AXYZData[n] = ESLOpacket.eslo_data
+                    case 10:
+                        AXYmgX = ESLOpacket.eslo_data
+                    case 11:
+                        AXYmgY = ESLOpacket.eslo_data
+                    case 12:
+                        AXYmgZ = ESLOpacket.eslo_data
+                    default:
+                        break
+                    }
+                }
+            }
+            if AXYmgX != 0 && AXYmgY != 0 && AXYmgZ != 0 { // init state
+                CompassRose.transform = CGAffineTransform(rotationAngle: CGFloat(atan2f(Float(AXYmgY),Float(AXYmgX))) - CGFloat.pi/2)
+                MgXLabel.text = String(AXYmgX)
+                MgYLabel.text = String(AXYmgY)
+                MgZLabel.text = String(AXYmgZ)
+            }
+            switch esloType {
+            case 7:
+                AXYXPlot.replaceSubrange(0..<AXYXData.count, with: AXYXData)
+                AXYXPlot.rotateLeft(positions: AXYXData.count)
+                AXYnewX = true
+            case 8:
+                AXYYPlot.replaceSubrange(0..<AXYYData.count, with: AXYYData)
+                AXYYPlot.rotateLeft(positions: AXYYData.count)
+                AXYnewY = true
+            case 9:
+                AXYZPlot.replaceSubrange(0..<AXYZData.count, with: AXYZData)
+                AXYZPlot.rotateLeft(positions: AXYZData.count)
+                AXYnewZ = true
+            default:
+                break
+            }
+            updateChart(AXY_CHART) // best place to call? it's going to update 4 times
         }
     }
     
