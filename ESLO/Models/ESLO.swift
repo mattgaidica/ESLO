@@ -23,6 +23,7 @@ struct ESLO_Settings {
     var Time4           = UInt8(0)
     var ExportData      = UInt8(0)
     var ResetVersion    = UInt8(0)
+    var AdvLong         = UInt8(0)
 };
 
 func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings) -> Bool {
@@ -61,6 +62,9 @@ func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings)
     if settings1.ResetVersion != settings2.ResetVersion {
         ret = false
     }
+    if settings1.AdvLong != settings2.AdvLong {
+        ret = false
+    }
     
     return ret
 }
@@ -82,6 +86,7 @@ func encodeESLOSettings(_ settings: ESLO_Settings) -> [UInt8] {
     rawSettings[12] = settings.Time4
     rawSettings[13] = settings.ExportData
     rawSettings[14] = settings.ResetVersion
+    rawSettings[15] = settings.AdvLong
     
     return rawSettings
 }
@@ -103,6 +108,7 @@ func decodeESLOSettings(_ settings: [UInt8]) -> ESLO_Settings {
     newSettings.Time4           = settings[12]
     newSettings.ExportData      = settings[13]
     newSettings.ResetVersion    = settings[14]
+    newSettings.AdvLong         = settings[15]
     
     return newSettings
 }

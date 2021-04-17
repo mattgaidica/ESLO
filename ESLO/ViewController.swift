@@ -83,6 +83,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var MgXLabel: UILabel!
     @IBOutlet weak var MgYLabel: UILabel!
     @IBOutlet weak var MgZLabel: UILabel!
+    @IBOutlet weak var AdvLongSwitch: UISwitch!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -96,7 +97,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var exportUrl: URL = URL("empty")
     var isExporting: Bool = false
     var timeoutTimer = Timer()
-    var timeOutSec: Double = 20
+    var timeOutSec: Double = 65
     var RSSITimer = Timer()
     var RSSI: NSNumber = 0
     var terminalCount: Int = 1
@@ -230,6 +231,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         }
     }
     
+    func scanBTE() {
+        centralManager.scanForPeripherals(withServices: [ESLOPeripheral.ESLOServiceUUID],
+                                          options: [CBCentralManagerScanOptionAllowDuplicatesKey : false])
+        updateChart(BOTH_CHARTS)
+        timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeOutSec, repeats: false) { timer in
+            self.cancelScan()
+        }
+    }
+    
     // Handles the result of the scan
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber) {
         // We've found it so stop scan
@@ -240,17 +250,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         self.RSSI = RSSI
         // Connect!
         ESLOTerminal.text = ""
-        printESLO("Connected " + getTimeStr())
+        printESLO("Scanned " + getTimeStr())
         self.centralManager.connect(self.peripheral, options: nil)
-    }
-    
-    func scanBTE() {
-        centralManager.scanForPeripherals(withServices: [ESLOPeripheral.ESLOServiceUUID],
-                                          options: [CBCentralManagerScanOptionAllowDuplicatesKey : false])
-        updateChart(BOTH_CHARTS)
-        timeoutTimer = Timer.scheduledTimer(withTimeInterval: timeOutSec, repeats: false) { timer in
-            self.cancelScan()
-        }
     }
     
     func getTimeStr() -> String {
@@ -900,6 +901,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         EEG2Switch.isOn = iosSettings.EEG2.boolValue
         EEG3Switch.isOn = iosSettings.EEG3.boolValue
         EEG4Switch.isOn = iosSettings.EEG4.boolValue
+        AdvLongSwitch.isOn = iosSettings.AdvLong.boolValue
         AxySwitch.selectedSegmentIndex = Int(iosSettings.AxyMode)
         TxPowerStepper.value = Double(Int(iosSettings.TxPower))
         updateTxLabel()
@@ -915,6 +917,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         iosSettings.EEG4 = EEG4Switch.isOn.uint8Value
         iosSettings.AxyMode = UInt8(AxySwitch.selectedSegmentIndex)
         iosSettings.TxPower = UInt8(TxPowerStepper.value)
+        iosSettings.AdvLong = AdvLongSwitch.isOn.uint8Value
         dataSynced()
     }
     func dataSynced() {
