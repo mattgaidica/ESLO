@@ -77,17 +77,19 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var EEGUnitsLabel: UILabel!
     @IBOutlet weak var ExportDataLabel: UIButton!
     @IBOutlet weak var ThermLabel: UILabel!
-    @IBOutlet weak var ThermBar: UIProgressView!
     @IBOutlet weak var ThermFLabel: UILabel!
     @IBOutlet weak var CompassRose: UIImageView!
     @IBOutlet weak var MgXLabel: UILabel!
     @IBOutlet weak var MgYLabel: UILabel!
     @IBOutlet weak var MgZLabel: UILabel!
     @IBOutlet weak var AdvLongSwitch: UISwitch!
+    @IBOutlet weak var LastFileButton: UIButton!
+    @IBOutlet weak var BattMinLabel: UILabel!
+    @IBOutlet weak var EsloAddrLabel: UILabel!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
-    private var battChar: CBCharacteristic?
+    private var vitalsChar: CBCharacteristic?
     private var EEGChar: CBCharacteristic?
     private var AXYChar: CBCharacteristic?
     private var settingsChar: CBCharacteristic?
@@ -194,6 +196,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         centralManager = CBCentralManager(delegate: self, queue: nil)
         WriteTimeLabel.text = getTimeStr()
         ESLOTerminal.text = ""
+        updateExportURLtoLastFile()
     }
     
     @IBAction func LEDChange(_ sender: Any) {
@@ -362,8 +365,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 }
                 if characteristic.uuid == ESLOPeripheral.vitalsCharacteristicUUID {
                     print("Battery characteristic found")
-                    printESLO("Found vBatt")
-                    battChar = characteristic
+                    printESLO("Found Vitals")
+                    vitalsChar = characteristic
                     peripheral.setNotifyValue(true, for: characteristic)
                 }
                 if characteristic.uuid == ESLOPeripheral.thermCharacteristicUUID {
@@ -415,14 +418,27 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             LEDSwitch.isOn = data.boolValue
             LEDSwitch.isEnabled = true
         }
-        if characteristic == battChar {
+        if characteristic == vitalsChar {
             let data:Data = characteristic.value! //get a data object from the CBCharacteristic
             // same method call, without type annotations
             let _ = data.withUnsafeBytes { pointer in
                 let vBatt = Float(pointer.load(as: Int32.self)) / 1000000
+                let minBatt = Float(pointer.load(fromByteOffset:4, as: Int32.self)) / 1000000
+                let esloAddr = pointer.load(fromByteOffset:8, as: Int32.self)
+                
                 let formatString = NSLocalizedString("%1.2fV", comment: "vBatt")
                 batteryPercentLabel.text = String(format: formatString, vBatt)
+                BattMinLabel.text = String(format: formatString, minBatt)
                 BatteryBar.progress = vBatt.converting(from: 2.5...3.0, to: 0.0...1.0)
+//                EsloAddrLabel.text = String(format: "0x%08x", esloAddr)
+                UIView.animate(withDuration: 0.2, animations: { () -> Void in
+                    self.EsloAddrLabel.transform = .init(scaleX: 1.25, y: 1.25)
+                }) { (finished: Bool) -> Void in
+                    self.EsloAddrLabel.text = String(format: "0x%08x", esloAddr)
+                    UIView.animate(withDuration: 0.25, animations: { () -> Void in
+                        self.EsloAddrLabel.transform = .identity
+                    })
+                }
             }
         }
         if characteristic == thermChar {
@@ -434,12 +450,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     let formatString = NSLocalizedString("%2.1f°C", comment: "therm")
                     ThermLabel.text = String(format: formatString, temp_C)
                     let formatStringF = NSLocalizedString("%2.1f°F", comment: "therm")
-                    ThermBar.progress = temp_C.converting(from: 20...40, to: 0.0...1.0)
                     ThermFLabel.text = String(format: formatStringF, temp_C * 1.8 + 32)
                 } else {
                     ThermLabel.text = "--.-°C"
                     ThermFLabel.text = "--.-°F"
-                    ThermBar.progress = 0.5
                 }
             }
         }
@@ -460,11 +474,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             PushButton.alpha = 1
             dataSynced()
             if isExporting {
+                updateExportURLtoLastFile()
+                isExporting = false
+                exportCount = 0
                 let activityViewController = UIActivityViewController(activityItems: [exportUrl], applicationActivities: nil)
                 present(activityViewController, animated: true, completion: nil)
                 printESLO("Done exporting")
-                isExporting = false
-                exportCount = 0
             }
         }
         // https://www.raywenderlich.com/7181017-unsafe-swift-using-pointers-and-interacting-with-c
@@ -597,7 +612,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             
             self.peripheral = nil
             LEDChar = nil
-            battChar = nil
+            vitalsChar = nil
             EEGChar = nil
             AXYChar = nil
             settingsChar = nil
@@ -999,7 +1014,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         iosSettings.ExportData = 0x01 // will override other settings on ESLO
         updateExportLabel()
         PushSettings(false)
-        rmESLOFiles()
+//        rmESLOFiles()
         let date = Date()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
@@ -1015,5 +1030,42 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         iosSettings.ResetVersion = 0x01
         PushSettings(false)
         printESLO("Version reset")
+    }
+    
+    @IBAction func ExportLastFile(_ sender: Any) {
+        if exportUrl != URL("empty") {
+            let activityViewController = UIActivityViewController(activityItems: [exportUrl], applicationActivities: nil)
+            present(activityViewController, animated: true, completion: nil)
+        }
+    }
+    func updateExportURLtoLastFile() {
+//        if let urlArray = try? FileManager.defaultManager().contentsOfDirectoryAtURL(directory, options:.SkipsHiddenFiles) {
+//
+//            return urlArray.map { url -> (String, NSTimeInterval) in
+//                var lastModified : AnyObject?
+//                _ = try? url.getResourceValue(&lastModified, forKey: NSURLContentModificationDateKey)
+//                return (url.lastPathComponent!, lastModified?.timeIntervalSinceReferenceDate ?? 0)
+//            }
+//            .sort({ $0.1 > $1.1 }) // sort descending modification dates
+//            .map { $0.0 } // extract file names
+//
+//        } else {
+//            return nil
+//        }
+        
+        let fileManager = FileManager.default
+        let documentsUrl =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first! as NSURL
+        let documentsPath = documentsUrl.path
+
+        do {
+            if let documentPath = documentsPath
+            {
+                let fileNames = try fileManager.contentsOfDirectory(atPath: "\(documentPath)").sorted()
+                exportUrl = self.getDocumentsDirectory().appendingPathComponent(fileNames[fileNames.count-1])
+                LastFileButton.setTitle(fileNames[fileNames.count-1], for: .normal)
+            }
+        } catch {
+            print("Document error")
+        }
     }
 }

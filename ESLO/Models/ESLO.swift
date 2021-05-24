@@ -151,3 +151,22 @@ func rmESLOFiles(){
         print("Could not clear temp folder: \(error)")
     }
 }
+
+func lsESLOFiles(){
+    let fileManager = FileManager.default
+    let documentsUrl =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first! as NSURL
+    let documentsPath = documentsUrl.path
+
+    do {
+        if let documentPath = documentsPath
+        {
+            let fileNames = try fileManager.contentsOfDirectory(atPath: "\(documentPath)")
+            print("all files: \(fileNames)")
+        }
+
+    } catch {
+        print("Could not clear temp folder: \(error)")
+    }
+}
+
+
