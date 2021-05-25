@@ -93,9 +93,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     private var EEGChar: CBCharacteristic?
     private var AXYChar: CBCharacteristic?
     private var settingsChar: CBCharacteristic?
-    private var thermChar: CBCharacteristic?
+    private var addrChar: CBCharacteristic?
+    private var memoryChar: CBCharacteristic?
     
     var exportCount: Int = 0
+    var esloExportBlock: UInt32 = 0
     var exportUrl: URL = URL("empty")
     var isExporting: Bool = false
     var timeoutTimer = Timer()
@@ -340,7 +342,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if service.uuid == ESLOPeripheral.ESLOServiceUUID {
                     print("Service found")
                     peripheral.discoverCharacteristics([ESLOPeripheral.LEDCharacteristicUUID, ESLOPeripheral.vitalsCharacteristicUUID, ESLOPeripheral.settingsCharacteristicUUID, ESLOPeripheral.EEGCharacteristicUUID,
-                                                        ESLOPeripheral.AXYCharacteristicUUID,ESLOPeripheral.thermCharacteristicUUID], for: service)
+                                                        ESLOPeripheral.AXYCharacteristicUUID,ESLOPeripheral.addrCharacteristicUUID,ESLOPeripheral.memoryCharacteristicUUID], for: service)
                 }
             }
         }
@@ -352,27 +354,23 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         if let characteristics = service.characteristics {
             for characteristic in characteristics {
                 if characteristic.uuid == ESLOPeripheral.LEDCharacteristicUUID {
-                    print("LED_0 characteristic found")
+                    print("LED characteristic found")
                     printESLO("Found LED")
                     // Set the characteristic
                     LEDChar = characteristic
+                    peripheral.setNotifyValue(true, for: characteristic)
                     if characteristic.value != nil {
-                        let data:UInt8 = characteristic.value![0]
-                        LEDSwitch.isOn = data.boolValue
-                    } else {
-                        LEDSwitch.isOn = false
+                        let data:Data = characteristic.value!
+                        let number = data.withUnsafeBytes { pointer in
+                            return pointer.load(as: UInt8.self)
+                        }
+                        LEDSwitch.isOn = number.boolValue
                     }
                 }
                 if characteristic.uuid == ESLOPeripheral.vitalsCharacteristicUUID {
                     print("Battery characteristic found")
                     printESLO("Found Vitals")
                     vitalsChar = characteristic
-                    peripheral.setNotifyValue(true, for: characteristic)
-                }
-                if characteristic.uuid == ESLOPeripheral.thermCharacteristicUUID {
-                    print("Therm characteristic found")
-                    printESLO("Found Therm")
-                    thermChar = characteristic
                     peripheral.setNotifyValue(true, for: characteristic)
                 }
                 if characteristic.uuid == ESLOPeripheral.settingsCharacteristicUUID {
@@ -393,6 +391,18 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     print("AXY characteristic found")
                     printESLO("Found AXY")
                     AXYChar = characteristic
+                    peripheral.setNotifyValue(true, for: characteristic)
+                }
+                if characteristic.uuid == ESLOPeripheral.addrCharacteristicUUID {
+                    print("Therm characteristic found")
+                    printESLO("Found Addr")
+                    addrChar = characteristic
+                    peripheral.setNotifyValue(true, for: characteristic)
+                }
+                if characteristic.uuid == ESLOPeripheral.memoryCharacteristicUUID {
+                    print("Memory characteristic found")
+                    printESLO("Found Memory")
+                    memoryChar = characteristic
                     peripheral.setNotifyValue(true, for: characteristic)
                 }
             }
@@ -424,28 +434,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             let _ = data.withUnsafeBytes { pointer in
                 let vBatt = Float(pointer.load(as: Int32.self)) / 1000000
                 let minBatt = Float(pointer.load(fromByteOffset:4, as: Int32.self)) / 1000000
-                let esloAddr = pointer.load(fromByteOffset:8, as: Int32.self)
+                let temp_C = Float(pointer.load(fromByteOffset:8, as: Int32.self)) / 1000000
+                let esloAddr = pointer.load(fromByteOffset:12, as: Int32.self)
                 
                 let formatString = NSLocalizedString("%1.2fV", comment: "vBatt")
                 batteryPercentLabel.text = String(format: formatString, vBatt)
                 BattMinLabel.text = String(format: formatString, minBatt)
                 BatteryBar.progress = vBatt.converting(from: 2.5...3.0, to: 0.0...1.0)
-//                EsloAddrLabel.text = String(format: "0x%08x", esloAddr)
-                UIView.animate(withDuration: 0.2, animations: { () -> Void in
-                    self.EsloAddrLabel.transform = .init(scaleX: 1.25, y: 1.25)
-                }) { (finished: Bool) -> Void in
-                    self.EsloAddrLabel.text = String(format: "0x%08x", esloAddr)
-                    UIView.animate(withDuration: 0.25, animations: { () -> Void in
-                        self.EsloAddrLabel.transform = .identity
-                    })
-                }
-            }
-        }
-        if characteristic == thermChar {
-            let data:Data = characteristic.value! //get a data object from the CBCharacteristic
-            // same method call, without type annotations
-            let _ = data.withUnsafeBytes { pointer in
-                let temp_C = Float(pointer.load(as: Int32.self)) / 1000000
+                
                 if temp_C < 100 && temp_C > 0 {
                     let formatString = NSLocalizedString("%2.1f°C", comment: "therm")
                     ThermLabel.text = String(format: formatString, temp_C)
@@ -454,6 +450,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 } else {
                     ThermLabel.text = "--.-°C"
                     ThermFLabel.text = "--.-°F"
+                }
+                
+                UIView.animate(withDuration: 0.2, animations: { () -> Void in
+                    self.EsloAddrLabel.transform = .init(scaleX: 1.25, y: 1.25)
+                }) { (finished: Bool) -> Void in
+                    self.EsloAddrLabel.text = String(format: "0x%08x", esloAddr)
+                    UIView.animate(withDuration: 0.25, animations: { () -> Void in
+                        self.EsloAddrLabel.transform = .identity
+                    })
                 }
             }
         }
@@ -473,77 +478,50 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             PushButton.isEnabled = true
             PushButton.alpha = 1
             dataSynced()
-            if isExporting {
-                updateExportURLtoLastFile()
-                isExporting = false
-                exportCount = 0
-                let activityViewController = UIActivityViewController(activityItems: [exportUrl], applicationActivities: nil)
-                present(activityViewController, animated: true, completion: nil)
-                printESLO("Done exporting")
-            }
         }
         // https://www.raywenderlich.com/7181017-unsafe-swift-using-pointers-and-interacting-with-c
         if characteristic == EEGChar {
-            if iosSettings.ExportData > 0 { // exporting data mode
-                isExporting = true
-//                print("exporting")
-                let data:Data = characteristic.value!
-                exportCount += data.count
-                if ((exportCount % 1000) == 0) {
-                    printESLO("Exported " + exportCount.byteSize)
-                }
-                if FileManager.default.fileExists(atPath: exportUrl.path) {
-                    if let fileHandle = try? FileHandle(forWritingTo: exportUrl) {
-                        fileHandle.seekToEndOfFile()
-                        fileHandle.write(data)
-                        fileHandle.closeFile()
-                    }
-                } else {
-                    try? data.write(to: exportUrl, options: .atomicWrite)
-                }
-            } else {
-                let data:Data = characteristic.value!
-                let _ = data.withUnsafeBytes { pointer in
-                    for n in 0..<EEG1Data.count {
-                        let eegSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
-                        let ESLOpacket = decodeESLOPacket(eegSample)
-                        self.esloType = ESLOpacket.eslo_type
-                        switch esloType {
-                        case 2:
-                            EEG1Data[n] = ESLOpacket.eslo_data
-                        case 3:
-                            EEG2Data[n] = ESLOpacket.eslo_data
-                        case 4:
-                            EEG3Data[n] = ESLOpacket.eslo_data
-                        case 5:
-                            EEG4Data[n] = ESLOpacket.eslo_data
-                        default:
-                            break
-                        }
+            let data:Data = characteristic.value!
+            let _ = data.withUnsafeBytes { pointer in
+                for n in 0..<EEG1Data.count {
+                    let eegSample = pointer.load(fromByteOffset:n*4, as: UInt32.self)
+                    let ESLOpacket = decodeESLOPacket(eegSample)
+                    self.esloType = ESLOpacket.eslo_type
+                    switch esloType {
+                    case 2:
+                        EEG1Data[n] = ESLOpacket.eslo_data
+                    case 3:
+                        EEG2Data[n] = ESLOpacket.eslo_data
+                    case 4:
+                        EEG3Data[n] = ESLOpacket.eslo_data
+                    case 5:
+                        EEG4Data[n] = ESLOpacket.eslo_data
+                    default:
+                        break
                     }
                 }
-                switch esloType {
-                case 2:
-                    EEG1Plot.replaceSubrange(0..<EEG1Data.count, with: EEG1Data)
-                    EEG1Plot.rotateLeft(positions: EEG1Data.count)
-                    EEGnew1 = true
-                case 3:
-                    EEG2Plot.replaceSubrange(0..<EEG2Data.count, with: EEG2Data)
-                    EEG2Plot.rotateLeft(positions: EEG2Data.count)
-                    EEGnew2 = true
-                case 4:
-                    EEG3Plot.replaceSubrange(0..<EEG3Data.count, with: EEG3Data)
-                    EEG3Plot.rotateLeft(positions: EEG3Data.count)
-                    EEGnew3 = true
-                case 5:
-                    EEG4Plot.replaceSubrange(0..<EEG4Data.count, with: EEG4Data)
-                    EEG4Plot.rotateLeft(positions: EEG4Data.count)
-                    EEGnew4 = true
-                default:
-                    break
-                }
-                updateChart(EEG_CHART)
             }
+            switch esloType {
+            case 2:
+                EEG1Plot.replaceSubrange(0..<EEG1Data.count, with: EEG1Data)
+                EEG1Plot.rotateLeft(positions: EEG1Data.count)
+                EEGnew1 = true
+            case 3:
+                EEG2Plot.replaceSubrange(0..<EEG2Data.count, with: EEG2Data)
+                EEG2Plot.rotateLeft(positions: EEG2Data.count)
+                EEGnew2 = true
+            case 4:
+                EEG3Plot.replaceSubrange(0..<EEG3Data.count, with: EEG3Data)
+                EEG3Plot.rotateLeft(positions: EEG3Data.count)
+                EEGnew3 = true
+            case 5:
+                EEG4Plot.replaceSubrange(0..<EEG4Data.count, with: EEG4Data)
+                EEG4Plot.rotateLeft(positions: EEG4Data.count)
+                EEGnew4 = true
+            default:
+                break
+            }
+            updateChart(EEG_CHART)
         }
         if characteristic == AXYChar {
             let data:Data = characteristic.value!
@@ -594,6 +572,37 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             updateChart(AXY_CHART) // best place to call? it's going to update 4 times
         }
+        if characteristic == addrChar {
+            updateExportURLtoLastFile()
+            isExporting = false
+            updateExportLabel()
+            exportCount = 0
+            let exportStr = String(format: "Done exporting %i blocks", esloExportBlock)
+            printESLO(exportStr)
+            esloExportBlock = 0
+            let activityViewController = UIActivityViewController(activityItems: [exportUrl], applicationActivities: nil)
+            present(activityViewController, animated: true, completion: nil)
+        }
+        if characteristic == memoryChar {
+            if isExporting {
+                let data:Data = characteristic.value!
+                exportCount += data.count
+                if ((exportCount % 1000) == 0) {
+                    printESLO("Exported " + exportCount.byteSize)
+                }
+                if FileManager.default.fileExists(atPath: exportUrl.path) {
+                    if let fileHandle = try? FileHandle(forWritingTo: exportUrl) {
+                        fileHandle.seekToEndOfFile()
+                        fileHandle.write(data)
+                        fileHandle.closeFile()
+                    }
+                } else {
+                    try? data.write(to: exportUrl, options: .atomicWrite)
+                }
+                esloExportBlock += 1
+                requestMemory()
+            }
+        }
     }
     
     // disconnected
@@ -616,8 +625,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             EEGChar = nil
             AXYChar = nil
             settingsChar = nil
-            thermChar = nil
+            addrChar = nil
+            memoryChar = nil
             terminalCount = 1
+            isExporting = false
+            updateExportLabel()
         }
     }
     
@@ -920,7 +932,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         AxySwitch.selectedSegmentIndex = Int(iosSettings.AxyMode)
         TxPowerStepper.value = Double(Int(iosSettings.TxPower))
         updateTxLabel()
-        updateExportLabel()
     }
     @IBAction func SettingsChanged(_ sender: Any) { // triggered by most UI changes
         iosSettings.SleepWake = SleepWakeSwitch.isOn.uint8Value
@@ -1004,28 +1015,38 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     func updateExportLabel() {
-        if iosSettings.ExportData > 0 {
+        if isExporting {
             ExportDataLabel.setTitle("Exporting...", for: .normal)
         } else {
             ExportDataLabel.setTitle("Export Data", for: .normal)
         }
     }
+    
     @IBAction func ExportDataButton(_ sender: Any) {
-        iosSettings.ExportData = 0x01 // will override other settings on ESLO
+        isExporting = true
         updateExportLabel()
-        PushSettings(false)
 //        rmESLOFiles()
         let date = Date()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
         exportUrl = self.getDocumentsDirectory().appendingPathComponent("ESLO_" + dateFormatter.string(from: date) + ".txt")
+        esloExportBlock = 0
+        requestMemory()
     }
+    func requestMemory() {
+        let ptr = UnsafeMutablePointer<UInt32>.allocate(capacity: 1)
+        ptr.initialize(from: &esloExportBlock, count: 1)
+        let data = Data(buffer: UnsafeBufferPointer(start: ptr, count: 1))
+        peripheral.writeValue(data, for: addrChar!, type: .withResponse)
+    }
+    
     //https://www.hackingwithswift.com/books/ios-swiftui/writing-data-to-the-documents-directory
     //https://stackoverflow.com/questions/50128462/how-to-save-document-to-files-app-in-swift
     //https://stackoverflow.com/questions/27327067/append-text-or-data-to-text-file-in-swift
     func getDocumentsDirectory() -> URL {
         return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
     }
+    
     @IBAction func ResetVersionButton(_ sender: Any) {
         iosSettings.ResetVersion = 0x01
         PushSettings(false)
@@ -1061,8 +1082,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             if let documentPath = documentsPath
             {
                 let fileNames = try fileManager.contentsOfDirectory(atPath: "\(documentPath)").sorted()
-                exportUrl = self.getDocumentsDirectory().appendingPathComponent(fileNames[fileNames.count-1])
-                LastFileButton.setTitle(fileNames[fileNames.count-1], for: .normal)
+                if fileNames.count > 0 {
+                    exportUrl = self.getDocumentsDirectory().appendingPathComponent(fileNames[fileNames.count-1])
+                    LastFileButton.setTitle(fileNames[fileNames.count-1], for: .normal)
+                }
             }
         } catch {
             print("Document error")
