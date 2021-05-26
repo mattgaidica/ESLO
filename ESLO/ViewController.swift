@@ -1035,6 +1035,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
             exportUrl = getDocumentsDirectory().appendingPathComponent("ESLO_" + dateFormatter.string(from: date) + ".txt")
+            FileManager.default.createFile(atPath: exportUrl.path, contents: nil, attributes: nil)
             esloExportBlock = 0
             memRxCount = 0
             requestMemory()
