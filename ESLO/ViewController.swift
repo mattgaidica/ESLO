@@ -573,15 +573,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             updateChart(AXY_CHART) // best place to call? it's going to update 4 times
         }
         if characteristic == addrChar {
-            updateExportURLtoLastFile()
-            isExporting = false
-            updateExportLabel()
-            exportCount = 0
-            let exportStr = String(format: "Done exporting %i blocks", esloExportBlock)
-            printESLO(exportStr)
-            esloExportBlock = 0
-            let activityViewController = UIActivityViewController(activityItems: [exportUrl], applicationActivities: nil)
-            present(activityViewController, animated: true, completion: nil)
+            finishExporting()
         }
         if characteristic == memoryChar {
             if isExporting {
@@ -1023,15 +1015,30 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     @IBAction func ExportDataButton(_ sender: Any) {
-        isExporting = true
+        if isExporting {
+            finishExporting()
+        } else {
+            isExporting = true
+            updateExportLabel()
+    //        rmESLOFiles()
+            let date = Date()
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
+            exportUrl = self.getDocumentsDirectory().appendingPathComponent("ESLO_" + dateFormatter.string(from: date) + ".txt")
+            esloExportBlock = 0
+            requestMemory()
+        }
+    }
+    func finishExporting() {
+        updateExportURLtoLastFile()
+        isExporting = false
         updateExportLabel()
-//        rmESLOFiles()
-        let date = Date()
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
-        exportUrl = self.getDocumentsDirectory().appendingPathComponent("ESLO_" + dateFormatter.string(from: date) + ".txt")
+        exportCount = 0
+        let exportStr = String(format: "Done exporting %i (x128)", esloExportBlock)
+        printESLO(exportStr)
         esloExportBlock = 0
-        requestMemory()
+        let activityViewController = UIActivityViewController(activityItems: [exportUrl], applicationActivities: nil)
+        present(activityViewController, animated: true, completion: nil)
     }
     func requestMemory() {
         let ptr = UnsafeMutablePointer<UInt32>.allocate(capacity: 1)
