@@ -130,7 +130,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var AXYmgY: Int32 = 0
     var AXYmgZ: Int32 = 0
     
-    var EEG_FS: Double = 250
+    var EEG_FS: Double = 125 // divided by 2 from 250
     var EEG_CHART: Int = 2
     var EEG1Data: Array<Int32> = Array(repeating: 0, count: 62)
     var EEG2Data: Array<Int32> = Array(repeating: 0, count: 62)
