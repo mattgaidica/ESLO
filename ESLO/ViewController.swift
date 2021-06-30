@@ -104,7 +104,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var timeoutConnTimer = Timer()
     var timeoutMemoryTimer = Timer()
     var RSSITimer = Timer()
-    var timeOutSec: Double = 65
+    var timeOutSec: Double = 70
     var RSSI: NSNumber = 0
     var terminalCount: Int = 1
     var EEGCount: Int = 0
@@ -381,7 +381,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     settingsChar = characteristic
                     peripheral.setNotifyValue(true, for: characteristic)
                     printESLO("Reading settings")
-                    peripheral.readValue(for: settingsChar!)
+                    peripheral.readValue(for: settingsChar!) // cue read of esloSettings
                 }
                 if characteristic.uuid == ESLOPeripheral.EEGCharacteristicUUID {
                     print("EEG characteristic found")
