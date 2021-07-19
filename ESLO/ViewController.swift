@@ -78,10 +78,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var ExportDataLabel: UIButton!
     @IBOutlet weak var ThermLabel: UILabel!
     @IBOutlet weak var ThermFLabel: UILabel!
-    @IBOutlet weak var CompassRose: UIImageView!
-    @IBOutlet weak var MgXLabel: UILabel!
-    @IBOutlet weak var MgYLabel: UILabel!
-    @IBOutlet weak var MgZLabel: UILabel!
     @IBOutlet weak var AdvLongSwitch: UISwitch!
     @IBOutlet weak var LastFileButton: UIButton!
     @IBOutlet weak var BattMinLabel: UILabel!
@@ -125,10 +121,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var AXYnewX: Bool = false
     var AXYnewY: Bool = false
     var AXYnewZ: Bool = false
-    
-    var AXYmgX: Int32 = 0
-    var AXYmgY: Int32 = 0
-    var AXYmgZ: Int32 = 0
     
     var EEG_FS: Double = 125 // divided by 2 from 250
     var EEG_CHART: Int = 2
@@ -539,22 +531,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         AXYYData[n] = ESLOpacket.eslo_data
                     case 9:
                         AXYZData[n] = ESLOpacket.eslo_data
-                    case 10:
-                        AXYmgX = ESLOpacket.eslo_data
-                    case 11:
-                        AXYmgY = ESLOpacket.eslo_data
-                    case 12:
-                        AXYmgZ = ESLOpacket.eslo_data
                     default:
                         break
                     }
                 }
-            }
-            if AXYmgX != 0 && AXYmgY != 0 && AXYmgZ != 0 { // init state
-                CompassRose.transform = CGAffineTransform(rotationAngle: CGFloat(atan2f(Float(AXYmgY),Float(AXYmgX))) - CGFloat.pi/2)
-                MgXLabel.text = String(AXYmgX)
-                MgYLabel.text = String(AXYmgY)
-                MgZLabel.text = String(AXYmgZ)
             }
             switch esloType {
             case 7:
