@@ -53,8 +53,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var BatteryBar: UIProgressView!
     @IBOutlet weak var ESLOTerminal: UITextView!
     @IBOutlet weak var WriteTimeLabel: UILabel!
-    @IBOutlet weak var TxPowerStepper: UIStepper!
-    @IBOutlet weak var TxPowerLabel: UILabel!
     @IBOutlet weak var DurationSlider: UISlider!
     @IBOutlet weak var DurationLabel: UILabel!
     @IBOutlet weak var DutySlider: UISlider!
@@ -75,13 +73,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var SciUnitsSwitch: UISwitch!
     @IBOutlet weak var AxyUnitsLabel: UILabel!
     @IBOutlet weak var EEGUnitsLabel: UILabel!
-    @IBOutlet weak var ExportDataLabel: UIButton!
     @IBOutlet weak var ThermLabel: UILabel!
     @IBOutlet weak var ThermFLabel: UILabel!
     @IBOutlet weak var AdvLongSwitch: UISwitch!
     @IBOutlet weak var LastFileButton: UIButton!
     @IBOutlet weak var BattMinLabel: UILabel!
     @IBOutlet weak var EsloAddrLabel: UILabel!
+    @IBOutlet weak var ResetButton: UIButton!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -141,10 +139,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // States
     let axyArr = [0,1,10]
-    let txArr = [-20, -10, 0, 5]
     let dutyArr = [0, 1, 2, 4, 8, 12, 24] // hours
     let durationArr = [0, 1, 5, 10, 30, 60] // minutes
     var esloType: UInt8 = 0
+    let resetAlpha: CGFloat = 0.3
     
     // Other
     let pasteboard = UIPasteboard.general
@@ -611,7 +609,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             memoryChar = nil
             terminalCount = 1
             isExporting = false
-            updateExportLabel()
+//            updateExportLabel()
         }
     }
     
@@ -912,8 +910,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         EEG4Switch.isOn = iosSettings.EEG4.boolValue
         AdvLongSwitch.isOn = iosSettings.AdvLong.boolValue
         AxySwitch.selectedSegmentIndex = Int(iosSettings.AxyMode)
-        TxPowerStepper.value = Double(Int(iosSettings.TxPower))
-        updateTxLabel()
     }
     @IBAction func SettingsChanged(_ sender: Any) { // triggered by most UI changes
         iosSettings.SleepWake = SleepWakeSwitch.isOn.uint8Value
@@ -924,7 +920,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         iosSettings.EEG3 = EEG3Switch.isOn.uint8Value
         iosSettings.EEG4 = EEG4Switch.isOn.uint8Value
         iosSettings.AxyMode = UInt8(AxySwitch.selectedSegmentIndex)
-        iosSettings.TxPower = UInt8(TxPowerStepper.value)
         iosSettings.AdvLong = AdvLongSwitch.isOn.uint8Value
         dataSynced()
     }
@@ -939,6 +934,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     @IBAction func PushSettings(_ sender: Any) {
         // https://medium.com/@shoheiyokoyama/manual-memory-management-in-swift-c31eb20ea8f
+        ResetButton.alpha = resetAlpha
         if settingsChar != nil {
             PushButton.isEnabled = false
             PushButton.alpha = 0.25
@@ -950,14 +946,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             peripheral.writeValue(data, for: settingsChar!, type: .withResponse)
             printESLO("Settings pushed") // will notify from ESLO
         }
-    }
-    
-    @IBAction func TxStepper(_ sender: Any) {
-        SettingsChanged(sender)
-        updateTxLabel()
-    }
-    func updateTxLabel()  {
-        TxPowerLabel.text = String(txArr[Int(TxPowerStepper.value)])
     }
     
     @IBAction func DutyChanged(_ sender: Any, forEvent event: UIEvent) {
@@ -996,20 +984,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         DurationSlider.value = Float(sliderIdx)
     }
     
-    func updateExportLabel() {
-        if isExporting {
-            ExportDataLabel.setTitle("Exporting...", for: .normal)
-        } else {
-            ExportDataLabel.setTitle("Export Data", for: .normal)
-        }
-    }
+//    func updateExportLabel() {
+//        if isExporting {
+//            ExportDataLabel.setTitle("Exporting...", for: .normal)
+//        } else {
+//            ExportDataLabel.setTitle("Export Data", for: .normal)
+//        }
+//    }
     
     @IBAction func ExportDataButton(_ sender: Any) {
         if isExporting {
             finishExporting()
         } else {
             isExporting = true
-            updateExportLabel()
+//            updateExportLabel()
 //            rmESLOFiles()
             let date = Date()
             let dateFormatter = DateFormatter()
@@ -1025,7 +1013,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         isExporting = false
         timeoutMemoryTimer.invalidate()
         updateExportURLtoLastFile()
-        updateExportLabel()
+//        updateExportLabel()
         exportCount = 0
         let exportStr = String(format: "Done exporting %i (x128)", esloExportBlock)
         printESLO(exportStr)
@@ -1055,9 +1043,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     @IBAction func ResetVersionButton(_ sender: Any) {
-        iosSettings.ResetVersion = 0x01
-        PushSettings(false)
-        printESLO("Version reset")
+        if ResetButton.alpha == 1 {
+            iosSettings.ResetVersion = 0x01
+            PushSettings(false)
+            printESLO("Version reset")
+            ResetButton.alpha = resetAlpha
+        } else {
+            ResetButton.alpha = 1
+        }
     }
     
     @IBAction func ExportLastFile(_ sender: Any) {
