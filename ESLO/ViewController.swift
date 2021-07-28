@@ -261,7 +261,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func hexTime() -> String {
         var components = DateComponents()
         components.day = 1
-        components.month = 1
+        components.month = 7
         components.year = 2021
         components.hour = 0
         components.minute = 0
