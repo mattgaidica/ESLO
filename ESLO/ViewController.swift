@@ -259,17 +259,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     func hexTime() -> String {
-        var components = DateComponents()
-        components.day = 1
-        components.month = 7
-        components.year = 2021
-        components.hour = 0
-        components.minute = 0
-        components.second = 0
-        let startDate = Calendar.current.date(from: components) ?? Date()
-        
-        let diffComponents = Calendar.current.dateComponents([.second], from: startDate, to: Date())
-        let seconds = UInt32(diffComponents.second!)
+        let seconds =  UInt32(NSDate().timeIntervalSince1970)
         let hexDateString = String(format: "0x%llX", seconds)
         
         // set iosSettings
