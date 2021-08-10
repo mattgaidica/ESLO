@@ -120,17 +120,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var AXYnewY: Bool = false
     var AXYnewZ: Bool = false
     
-    var EEG_FS: Double = 125 // divided by 2 from 250
+    var EEG_FS: Double = 50 // divided by 2 from 250
     var EEG_CHART: Int = 2
     var EEG1Data: Array<Int32> = Array(repeating: 0, count: 62)
     var EEG2Data: Array<Int32> = Array(repeating: 0, count: 62)
     var EEG3Data: Array<Int32> = Array(repeating: 0, count: 62)
     var EEG4Data: Array<Int32> = Array(repeating: 0, count: 62)
     
-    var EEG1Plot: Array<Int32> = Array(repeating: 0, count: 248*3)
-    var EEG2Plot: Array<Int32> = Array(repeating: 0, count: 248*3)
-    var EEG3Plot: Array<Int32> = Array(repeating: 0, count: 248*3)
-    var EEG4Plot: Array<Int32> = Array(repeating: 0, count: 248*3)
+    var EEG1Plot: Array<Int32> = Array(repeating: 0, count: 248)
+    var EEG2Plot: Array<Int32> = Array(repeating: 0, count: 248)
+    var EEG3Plot: Array<Int32> = Array(repeating: 0, count: 248)
+    var EEG4Plot: Array<Int32> = Array(repeating: 0, count: 248)
     
     var EEGnew1: Bool = false
     var EEGnew2: Bool = false
