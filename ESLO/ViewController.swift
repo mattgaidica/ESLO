@@ -962,6 +962,15 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 case .moved:
                     updateDurationLabel()
                 case .ended:
+                    if (Int(DurationSlider.value) == 0) {
+                        DutySlider.value = 0
+                        updateDutyLabel()
+                    } else {
+                        if (DutySlider.value == 0) {
+                            DutySlider.value = 1
+                            updateDutyLabel()
+                        }
+                    }
                     SettingsChanged(sender)
                 default:
                     break
