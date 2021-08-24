@@ -30,34 +30,6 @@
                                 <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Last file:" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TGj-VX-MCh">
-                                <rect key="frame" x="185" y="454" width="58" height="18"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="15"/>
-                                <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="bottom" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="tk9-Tc-OjD">
-                                <rect key="frame" x="93" y="453" width="241" height="19"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="13"/>
-                                <color key="tintColor" white="0.66666666666666663" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <state key="normal" title="No files found">
-                                    <color key="titleColor" white="0.66666666666666663" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                </state>
-                                <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="borderWidth">
-                                        <real key="value" value="0.0"/>
-                                    </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                        <real key="value" value="0.0"/>
-                                    </userDefinedRuntimeAttribute>
-                                </userDefinedRuntimeAttributes>
-                                <connections>
-                                    <action selector="ExportLastFile:" destination="BYZ-38-t0r" eventType="touchUpInside" id="HTU-Im-ARm"/>
-                                </connections>
-                            </button>
                             <view alpha="0.10000000149011612" contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eay-gn-JHM" userLabel="Sep: Controls">
                                 <rect key="frame" x="0.0" y="462" width="428" height="1"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
@@ -496,7 +468,6 @@
                         <outlet property="Header" destination="0vT-a1-6PY" id="lGU-WN-Mi9"/>
                         <outlet property="HexTimeLabel" destination="8kE-9w-4Fc" id="tqn-iP-Emc"/>
                         <outlet property="LEDSwitch" destination="BJs-Yq-YbP" id="yeR-eT-5Bb"/>
-                        <outlet property="LastFileButton" destination="tk9-Tc-OjD" id="VzI-8h-zbz"/>
                         <outlet property="PushActivityIndicator" destination="g92-hj-ma2" id="xTC-kq-eyL"/>
                         <outlet property="PushButton" destination="H8P-7v-YtF" id="MBC-As-3bt"/>
                         <outlet property="RSSILabel" destination="9Ba-7t-tp2" id="vul-7l-hhj"/>

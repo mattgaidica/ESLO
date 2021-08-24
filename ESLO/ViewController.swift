@@ -76,7 +76,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var ThermLabel: UILabel!
     @IBOutlet weak var ThermFLabel: UILabel!
     @IBOutlet weak var AdvLongSwitch: UISwitch!
-    @IBOutlet weak var LastFileButton: UIButton!
     @IBOutlet weak var BattMinLabel: UILabel!
     @IBOutlet weak var EsloAddrLabel: UILabel!
     @IBOutlet weak var ResetButton: UIButton!
@@ -88,15 +87,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     private var AXYChar: CBCharacteristic?
     private var settingsChar: CBCharacteristic?
     private var addrChar: CBCharacteristic?
-    private var memoryChar: CBCharacteristic?
     
-    var memRxCount: UInt32 = 0
     var exportCount: Int = 0
     var esloExportBlock: UInt32 = 0
     var exportUrl: URL = URL("empty")
-    var isExporting: Bool = false
     var timeoutConnTimer = Timer()
-    var timeoutMemoryTimer = Timer()
     var RSSITimer = Timer()
     var timeOutSec: Double = 70
     var RSSI: NSNumber = 0
@@ -190,7 +185,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         centralManager = CBCentralManager(delegate: self, queue: nil)
         WriteTimeLabel.text = getTimeStr()
         ESLOTerminal.text = ""
-        updateExportURLtoLastFile()
     }
     
     @IBAction func LEDChange(_ sender: Any) {
@@ -324,7 +318,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if service.uuid == ESLOPeripheral.ESLOServiceUUID {
                     print("Service found")
                     peripheral.discoverCharacteristics([ESLOPeripheral.LEDCharacteristicUUID, ESLOPeripheral.vitalsCharacteristicUUID, ESLOPeripheral.settingsCharacteristicUUID, ESLOPeripheral.EEGCharacteristicUUID,
-                                                        ESLOPeripheral.AXYCharacteristicUUID,ESLOPeripheral.addrCharacteristicUUID,ESLOPeripheral.memoryCharacteristicUUID], for: service)
+                                                        ESLOPeripheral.AXYCharacteristicUUID,ESLOPeripheral.addrCharacteristicUUID], for: service)
                 }
             }
         }
@@ -379,12 +373,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     print("Therm characteristic found")
                     printESLO("Found Addr")
                     addrChar = characteristic
-                    peripheral.setNotifyValue(true, for: characteristic)
-                }
-                if characteristic.uuid == ESLOPeripheral.memoryCharacteristicUUID {
-                    print("Memory characteristic found")
-                    printESLO("Found Memory")
-                    memoryChar = characteristic
                     peripheral.setNotifyValue(true, for: characteristic)
                 }
             }
@@ -542,42 +530,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             updateChart(AXY_CHART) // best place to call? it's going to update 4 times
         }
-        if characteristic == addrChar {
-            if isExporting {
-                finishExporting()
-            }
-        }
-        if characteristic == memoryChar {
-            if isExporting {
-                let data:Data = characteristic.value!
-                exportCount += data.count
-                if ((exportCount % 1000) == 0) {
-                    printESLO("Exported " + exportCount.byteSize)
-                }
-                if FileManager.default.fileExists(atPath: exportUrl.path) {
-                    if let fileHandle = try? FileHandle(forWritingTo: exportUrl) {
-                        fileHandle.seekToEndOfFile()
-                        fileHandle.write(data)
-                        fileHandle.closeFile()
-                    } else {
-                        try? data.write(to: exportUrl, options: .atomicWrite)
-                    }
-                }
-                
-                memRxCount += 1
-                if memRxCount == 16 {
-                    timeoutMemoryTimer.invalidate() // reset
-                    esloExportBlock += 1
-                    requestMemory()
-                }
-            }
-        }
     }
     
     // disconnected
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         if peripheral == self.peripheral {
-            timeoutMemoryTimer.invalidate()
             stopReadRSSI()
             DeviceLabel.text = "Disconnected"
             DeviceView.backgroundColor = UIColor(hex: "#c0392bff")
@@ -596,10 +553,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             AXYChar = nil
             settingsChar = nil
             addrChar = nil
-            memoryChar = nil
             terminalCount = 1
-            isExporting = false
-//            updateExportLabel()
         }
     }
     
@@ -983,64 +937,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         DurationSlider.value = Float(sliderIdx)
     }
     
-//    func updateExportLabel() {
-//        if isExporting {
-//            ExportDataLabel.setTitle("Exporting...", for: .normal)
-//        } else {
-//            ExportDataLabel.setTitle("Export Data", for: .normal)
-//        }
-//    }
-    
-    @IBAction func ExportDataButton(_ sender: Any) {
-        if isExporting {
-            finishExporting()
-        } else {
-            isExporting = true
-//            updateExportLabel()
-//            rmESLOFiles()
-            let date = Date()
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
-            exportUrl = getDocumentsDirectory().appendingPathComponent("ESLO_" + dateFormatter.string(from: date) + ".txt")
-            FileManager.default.createFile(atPath: exportUrl.path, contents: nil, attributes: nil)
-            esloExportBlock = 0
-            memRxCount = 0
-            requestMemory()
-        }
-    }
-    func finishExporting() {
-        isExporting = false
-        timeoutMemoryTimer.invalidate()
-        updateExportURLtoLastFile()
-//        updateExportLabel()
-        exportCount = 0
-        let exportStr = String(format: "Done exporting %i (x128)", esloExportBlock)
-        printESLO(exportStr)
-        esloExportBlock = 0
-        memRxCount = 0
-        let activityViewController = UIActivityViewController(activityItems: [exportUrl], applicationActivities: nil)
-        present(activityViewController, animated: true, completion: nil)
-    }
-    func requestMemory() {
-        let ptr = UnsafeMutablePointer<UInt32>.allocate(capacity: 1)
-        ptr.initialize(from: &esloExportBlock, count: 1)
-        let data = Data(buffer: UnsafeBufferPointer(start: ptr, count: 1))
-        self.timeoutMemoryTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { timer in
-            self.memRxCount = 0 // case: 16 packets didn't come thru, retry
-            self.peripheral.writeValue(data, for: self.addrChar!, type: .withResponse)
-        }
-        self.timeoutMemoryTimer.fire()
-    }
-    
-    //https://www.hackingwithswift.com/books/ios-swiftui/writing-data-to-the-documents-directory
-    //https://stackoverflow.com/questions/50128462/how-to-save-document-to-files-app-in-swift
-    //https://stackoverflow.com/questions/27327067/append-text-or-data-to-text-file-in-swift
-    func getDocumentsDirectory() -> URL {
-        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        let documentsDirectory = paths[0]
-        return documentsDirectory
-    }
-    
     @IBAction func ResetVersionButton(_ sender: Any) {
         if ResetButton.alpha == 1 {
             iosSettings.ResetVersion = 0x01
@@ -1049,31 +945,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             ResetButton.alpha = resetAlpha
         } else {
             ResetButton.alpha = 1
-        }
-    }
-    
-    @IBAction func ExportLastFile(_ sender: Any) {
-        if exportUrl != URL("empty") {
-            let activityViewController = UIActivityViewController(activityItems: [exportUrl], applicationActivities: nil)
-            present(activityViewController, animated: true, completion: nil)
-        }
-    }
-    func updateExportURLtoLastFile() {
-        let fileManager = FileManager.default
-        let documentsUrl =  FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first! as NSURL
-        let documentsPath = documentsUrl.path
-
-        do {
-            if let documentPath = documentsPath
-            {
-                let fileNames = try fileManager.contentsOfDirectory(atPath: "\(documentPath)").sorted()
-                if fileNames.count > 0 {
-                    exportUrl = self.getDocumentsDirectory().appendingPathComponent(fileNames[fileNames.count-1])
-                    LastFileButton.setTitle(fileNames[fileNames.count-1], for: .normal)
-                }
-            }
-        } catch {
-            print("Document error")
         }
     }
 }

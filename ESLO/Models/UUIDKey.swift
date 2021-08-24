@@ -14,5 +14,4 @@ class ESLOPeripheral: NSObject {
     public static let EEGCharacteristicUUID      = CBUUID.init(string: "E004")
     public static let AXYCharacteristicUUID      = CBUUID.init(string: "E005")
     public static let addrCharacteristicUUID     = CBUUID.init(string: "E006")
-    public static let memoryCharacteristicUUID   = CBUUID.init(string: "E007")
 }
