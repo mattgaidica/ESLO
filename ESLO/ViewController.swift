@@ -93,7 +93,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var exportUrl: URL = URL("empty")
     var timeoutConnTimer = Timer()
     var RSSITimer = Timer()
-    var timeOutSec: Double = 70
+    var timeOutSec: Double = 60*2
     var RSSI: NSNumber = 0
     var terminalCount: Int = 1
     var EEGCount: Int = 0
