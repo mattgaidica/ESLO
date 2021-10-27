@@ -79,6 +79,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var BattMinLabel: UILabel!
     @IBOutlet weak var EsloAddrLabel: UILabel!
     @IBOutlet weak var ResetButton: UIButton!
+    @IBOutlet weak var SWASwitch: UISegmentedControl!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -371,8 +372,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     peripheral.setNotifyValue(true, for: characteristic)
                 }
                 if characteristic.uuid == ESLOPeripheral.addrCharacteristicUUID {
-                    print("Therm characteristic found")
+                    print("Addr characteristic found")
                     printESLO("Found Addr")
+                    addrChar = characteristic
+                    peripheral.setNotifyValue(true, for: characteristic)
+                }
+                if characteristic.uuid == ESLOPeripheral.swaCharacteristicUUID {
+                    print("SWA characteristic found")
+                    printESLO("Found SWA")
                     addrChar = characteristic
                     peripheral.setNotifyValue(true, for: characteristic)
                 }
@@ -844,26 +851,28 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     
     func settingsUpdate() { // from ESLO
-        SleepWakeSwitch.isOn = iosSettings.SleepWake.boolValue
-        DutySlider.value = Float(dutyArr.firstIndex(of: Int(iosSettings.EEGDuty))!)
+        SleepWakeSwitch.isOn = iosSettings.Record.boolValue
+        DutySlider.value = Float(dutyArr.firstIndex(of: Int(iosSettings.RecPeriod))!)
         updateDutyLabel()
-        DurationSlider.value = Float(durationArr.firstIndex(of: Int(iosSettings.EEGDuration))!)
+        DurationSlider.value = Float(durationArr.firstIndex(of: Int(iosSettings.RecDuration))!)
         updateDurationLabel()
         EEG1Switch.isOn = iosSettings.EEG1.boolValue
         EEG2Switch.isOn = iosSettings.EEG2.boolValue
         EEG3Switch.isOn = iosSettings.EEG3.boolValue
         EEG4Switch.isOn = iosSettings.EEG4.boolValue
-        AdvLongSwitch.isOn = iosSettings.AdvLong.boolValue
         AxySwitch.selectedSegmentIndex = Int(iosSettings.AxyMode)
+        SWASwitch.selectedSegmentIndex = Int(iosSettings.SWA)
+        AdvLongSwitch.isOn = iosSettings.AdvLong.boolValue
     }
     @IBAction func SettingsChanged(_ sender: Any) { // triggered by most UI changes
-        iosSettings.SleepWake = SleepWakeSwitch.isOn.uint8Value
-        iosSettings.EEGDuty = UInt8(dutyArr[Int(DutySlider.value)])
-        iosSettings.EEGDuration = UInt8(durationArr[Int(DurationSlider.value)])
+        iosSettings.Record = SleepWakeSwitch.isOn.uint8Value
+        iosSettings.RecPeriod = UInt8(dutyArr[Int(DutySlider.value)])
+        iosSettings.RecDuration = UInt8(durationArr[Int(DurationSlider.value)])
         iosSettings.EEG1 = EEG1Switch.isOn.uint8Value
         iosSettings.EEG2 = EEG2Switch.isOn.uint8Value
         iosSettings.EEG3 = EEG3Switch.isOn.uint8Value
         iosSettings.EEG4 = EEG4Switch.isOn.uint8Value
+        iosSettings.SWA = UInt8(SWASwitch.selectedSegmentIndex)
         iosSettings.AxyMode = UInt8(AxySwitch.selectedSegmentIndex)
         iosSettings.AdvLong = AdvLongSwitch.isOn.uint8Value
         dataSynced()

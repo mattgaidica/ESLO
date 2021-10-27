@@ -8,33 +8,33 @@
 import Foundation
 
 struct ESLO_Settings {
-    var SleepWake       = UInt8(0)
-    var EEGDuty         = UInt8(0)
-    var EEGDuration     = UInt8(0)
+    var Record          = UInt8(0)
+    var RecPeriod       = UInt8(0)
+    var RecDuration     = UInt8(0)
     var EEG1            = UInt8(0)
     var EEG2            = UInt8(0)
     var EEG3            = UInt8(0)
     var EEG4            = UInt8(0)
     var AxyMode         = UInt8(0)
-    var TxPower         = UInt8(0)
+    var SWA             = UInt8(0)
     var Time1           = UInt8(0)
     var Time2           = UInt8(0)
     var Time3           = UInt8(0)
     var Time4           = UInt8(0)
-    var ExportData      = UInt8(0)
+    var NotUsed1        = UInt8(0)
     var ResetVersion    = UInt8(0)
     var AdvLong         = UInt8(0)
 };
 
 func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings) -> Bool {
     var ret: Bool = true
-    if settings1.SleepWake != settings2.SleepWake {
+    if settings1.Record != settings2.Record {
         ret = false
     }
-    if settings1.EEGDuty != settings2.EEGDuty {
+    if settings1.RecPeriod != settings2.RecPeriod {
         ret = false
     }
-    if settings1.EEGDuration != settings2.EEGDuration {
+    if settings1.RecDuration != settings2.RecDuration {
         ret = false
     }
     if settings1.EEG1 != settings2.EEG1 {
@@ -52,11 +52,11 @@ func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings)
     if settings1.AxyMode != settings2.AxyMode {
         ret = false
     }
-    if settings1.TxPower != settings2.TxPower {
+    if settings1.SWA != settings2.SWA {
         ret = false
     }
     // do nothing with TimeX
-    if settings1.ExportData != settings2.ExportData {
+    if settings1.NotUsed1 != settings2.NotUsed1 {
         ret = false
     }
     if settings1.ResetVersion != settings2.ResetVersion {
@@ -71,20 +71,20 @@ func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings)
 
 func encodeESLOSettings(_ settings: ESLO_Settings) -> [UInt8] {
     var rawSettings: Array<UInt8> = Array(repeating: 0, count: 16)
-    rawSettings[0]  = settings.SleepWake
-    rawSettings[1]  = settings.EEGDuty
-    rawSettings[2]  = settings.EEGDuration
+    rawSettings[0]  = settings.Record
+    rawSettings[1]  = settings.RecPeriod
+    rawSettings[2]  = settings.RecDuration
     rawSettings[3]  = settings.EEG1
     rawSettings[4]  = settings.EEG2
     rawSettings[5]  = settings.EEG3
     rawSettings[6]  = settings.EEG4
     rawSettings[7]  = settings.AxyMode
-    rawSettings[8]  = settings.TxPower
+    rawSettings[8]  = settings.SWA
     rawSettings[9]  = settings.Time1
     rawSettings[10] = settings.Time2
     rawSettings[11] = settings.Time3
     rawSettings[12] = settings.Time4
-    rawSettings[13] = settings.ExportData
+    rawSettings[13] = settings.NotUsed1
     rawSettings[14] = settings.ResetVersion
     rawSettings[15] = settings.AdvLong
     
@@ -93,20 +93,20 @@ func encodeESLOSettings(_ settings: ESLO_Settings) -> [UInt8] {
 
 func decodeESLOSettings(_ settings: [UInt8]) -> ESLO_Settings {
     var newSettings: ESLO_Settings! = ESLO_Settings()
-    newSettings.SleepWake       = settings[0]
-    newSettings.EEGDuty         = settings[1]
-    newSettings.EEGDuration     = settings[2]
+    newSettings.Record          = settings[0]
+    newSettings.RecPeriod       = settings[1]
+    newSettings.RecDuration     = settings[2]
     newSettings.EEG1            = settings[3]
     newSettings.EEG2            = settings[4]
     newSettings.EEG3            = settings[5]
     newSettings.EEG4            = settings[6]
     newSettings.AxyMode         = settings[7]
-    newSettings.TxPower         = settings[8]
+    newSettings.SWA             = settings[8]
     newSettings.Time1           = settings[9]
     newSettings.Time2           = settings[10]
     newSettings.Time3           = settings[11]
     newSettings.Time4           = settings[12]
-    newSettings.ExportData      = settings[13]
+    newSettings.NotUsed1        = settings[13]
     newSettings.ResetVersion    = settings[14]
     newSettings.AdvLong         = settings[15]
     
