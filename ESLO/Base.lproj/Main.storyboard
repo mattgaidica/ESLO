@@ -399,10 +399,10 @@
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <segments>
                                             <segment title="SWA Off"/>
-                                            <segment title="EEG1"/>
-                                            <segment title="EEG2"/>
-                                            <segment title="EEG3"/>
-                                            <segment title="EEG4"/>
+                                            <segment title="EEG1" enabled="NO"/>
+                                            <segment title="EEG2" enabled="NO"/>
+                                            <segment title="EEG3" enabled="NO"/>
+                                            <segment title="EEG4" enabled="NO"/>
                                         </segments>
                                         <color key="selectedSegmentTintColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <connections>

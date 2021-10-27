@@ -88,6 +88,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     private var AXYChar: CBCharacteristic?
     private var settingsChar: CBCharacteristic?
     private var addrChar: CBCharacteristic?
+    private var swaChar: CBCharacteristic?
     
     var exportCount: Int = 0
     var esloExportBlock: UInt32 = 0
@@ -187,6 +188,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         centralManager = CBCentralManager(delegate: self, queue: nil)
         WriteTimeLabel.text = getTimeStr()
         ESLOTerminal.text = ""
+        updateSWASwitch()
     }
     
     @IBAction func LEDChange(_ sender: Any) {
@@ -320,7 +322,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if service.uuid == ESLOPeripheral.ESLOServiceUUID {
                     print("Service found")
                     peripheral.discoverCharacteristics([ESLOPeripheral.LEDCharacteristicUUID, ESLOPeripheral.vitalsCharacteristicUUID, ESLOPeripheral.settingsCharacteristicUUID, ESLOPeripheral.EEGCharacteristicUUID,
-                                                        ESLOPeripheral.AXYCharacteristicUUID,ESLOPeripheral.addrCharacteristicUUID], for: service)
+                                                        ESLOPeripheral.AXYCharacteristicUUID,ESLOPeripheral.addrCharacteristicUUID,ESLOPeripheral.swaCharacteristicUUID], for: service)
                 }
             }
         }
@@ -380,7 +382,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if characteristic.uuid == ESLOPeripheral.swaCharacteristicUUID {
                     print("SWA characteristic found")
                     printESLO("Found SWA")
-                    addrChar = characteristic
+                    swaChar = characteristic
                     peripheral.setNotifyValue(true, for: characteristic)
                 }
             }
@@ -538,6 +540,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             }
             updateChart(AXY_CHART) // best place to call? it's going to update 4 times
         }
+        if characteristic == swaChar {
+            printESLO("SWA Detected")
+        }
     }
     
     // disconnected
@@ -561,6 +566,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             AXYChar = nil
             settingsChar = nil
             addrChar = nil
+            swaChar = nil
             terminalCount = 1
         }
     }
@@ -863,6 +869,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         AxySwitch.selectedSegmentIndex = Int(iosSettings.AxyMode)
         SWASwitch.selectedSegmentIndex = Int(iosSettings.SWA)
         AdvLongSwitch.isOn = iosSettings.AdvLong.boolValue
+        updateSWASwitch()
     }
     @IBAction func SettingsChanged(_ sender: Any) { // triggered by most UI changes
         iosSettings.Record = SleepWakeSwitch.isOn.uint8Value
@@ -875,6 +882,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         iosSettings.SWA = UInt8(SWASwitch.selectedSegmentIndex)
         iosSettings.AxyMode = UInt8(AxySwitch.selectedSegmentIndex)
         iosSettings.AdvLong = AdvLongSwitch.isOn.uint8Value
+        updateSWASwitch()
         dataSynced()
     }
     func dataSynced() {
@@ -956,5 +964,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         } else {
             ResetButton.alpha = 1
         }
+    }
+    
+    func updateSWASwitch() {
+        if !EEG1Switch.isOn && SWASwitch.selectedSegmentIndex == 1 {
+            SWASwitch.selectedSegmentIndex = 0
+        }
+        if !EEG2Switch.isOn && SWASwitch.selectedSegmentIndex == 2 {
+            SWASwitch.selectedSegmentIndex = 0
+        }
+        if !EEG3Switch.isOn && SWASwitch.selectedSegmentIndex == 3 {
+            SWASwitch.selectedSegmentIndex = 0
+        }
+        if !EEG4Switch.isOn && SWASwitch.selectedSegmentIndex == 4 {
+            SWASwitch.selectedSegmentIndex = 0
+        }
+        SWASwitch.setEnabled(EEG1Switch.isOn, forSegmentAt: 1)
+        SWASwitch.setEnabled(EEG2Switch.isOn, forSegmentAt: 2)
+        SWASwitch.setEnabled(EEG3Switch.isOn, forSegmentAt: 3)
+        SWASwitch.setEnabled(EEG4Switch.isOn, forSegmentAt: 4)
     }
 }
