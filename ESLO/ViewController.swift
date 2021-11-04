@@ -383,7 +383,6 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     print("SWA characteristic found")
                     printESLO("Found SWA")
                     swaChar = characteristic
-                    peripheral.setNotifyValue(true, for: characteristic)
                 }
             }
         }
