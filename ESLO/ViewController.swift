@@ -80,6 +80,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var EsloAddrLabel: UILabel!
     @IBOutlet weak var ResetButton: UIButton!
     @IBOutlet weak var SWASwitch: UISegmentedControl!
+    @IBOutlet weak var AxyMoveLabel: UILabel!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -415,6 +416,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 let minBatt = Float(pointer.load(fromByteOffset:4, as: Int32.self)) / 1000000
                 let temp_C = Float(pointer.load(fromByteOffset:8, as: Int32.self)) / 1000000
                 let esloAddr = pointer.load(fromByteOffset:12, as: Int32.self)
+                let axyMove = pointer.load(fromByteOffset:16, as: UInt8.self)
                 
                 let formatString = NSLocalizedString("%1.2fV", comment: "vBatt")
                 batteryPercentLabel.text = String(format: formatString, vBatt)
@@ -439,6 +441,17 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                         self.EsloAddrLabel.transform = .identity
                     })
                 }
+                
+                let initBits:UInt8 = 0x01
+                var labelString = ""
+                for n in 0...4 {
+                    if axyMove & (initBits<<n) > 0 {
+                        labelString = "●" + labelString
+                    } else {
+                        labelString = "○" + labelString
+                    }
+                }
+                AxyMoveLabel.text = labelString
             }
         }
         if characteristic == settingsChar {
