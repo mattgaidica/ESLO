@@ -81,6 +81,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var ResetButton: UIButton!
     @IBOutlet weak var SWASwitch: UISegmentedControl!
     @IBOutlet weak var AxyMoveLabel: UILabel!
+    @IBOutlet weak var SWAThreshSlider: UISlider!
+    @IBOutlet weak var SWAThreshLabel: UILabel!
+    
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -190,6 +193,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         WriteTimeLabel.text = getTimeStr()
         ESLOTerminal.text = ""
         updateSWASwitch()
+        updateSWAThreshLabel()
     }
     
     @IBAction func LEDChange(_ sender: Any) {
@@ -880,7 +884,9 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         EEG4Switch.isOn = iosSettings.EEG4.boolValue
         AxySwitch.selectedSegmentIndex = Int(iosSettings.AxyMode)
         SWASwitch.selectedSegmentIndex = Int(iosSettings.SWA)
+        SWAThreshSlider.value = Float(iosSettings.SWAThresh);
         AdvLongSwitch.isOn = iosSettings.AdvLong.boolValue
+        updateSWAThreshLabel()
         updateSWASwitch()
     }
     @IBAction func SettingsChanged(_ sender: Any) { // triggered by most UI changes
@@ -892,6 +898,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         iosSettings.EEG3 = EEG3Switch.isOn.uint8Value
         iosSettings.EEG4 = EEG4Switch.isOn.uint8Value
         iosSettings.SWA = UInt8(SWASwitch.selectedSegmentIndex)
+        iosSettings.SWAThresh = UInt8(SWAThreshSlider.value)
         iosSettings.AxyMode = UInt8(AxySwitch.selectedSegmentIndex)
         iosSettings.AdvLong = AdvLongSwitch.isOn.uint8Value
         updateSWASwitch()
@@ -920,6 +927,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             peripheral.writeValue(data, for: settingsChar!, type: .withResponse)
             printESLO("Settings pushed") // will notify from ESLO
         }
+    }
+    
+    @IBAction func SWAThreshChanged(_ sender: Any, forEvent event: UIEvent) {
+        if let touchEvent = event.allTouches?.first {
+            switch touchEvent.phase {
+                case .moved:
+                    updateSWAThreshLabel()
+                case .ended:
+                    SettingsChanged(sender)
+                default:
+                    break
+            }
+        }
+    }
+    func updateSWAThreshLabel() {
+        let sliderIdx = Int(SWAThreshSlider.value)
+        SWAThreshLabel.text = String(format: "%1.2e", 1e11 * Float(sliderIdx))
+        SWAThreshSlider.value = Float(sliderIdx)
     }
     
     @IBAction func DutyChanged(_ sender: Any, forEvent event: UIEvent) {
