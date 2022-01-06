@@ -22,6 +22,7 @@ struct ESLO_Settings {
     var Time3           = UInt8(0)
     var Time4           = UInt8(0)
     var SWAThresh       = UInt8(0)
+    var SWABypass       = UInt8(0)
     var ResetVersion    = UInt8(0)
     var AdvLong         = UInt8(0)
 };
@@ -59,6 +60,9 @@ func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings)
     if settings1.SWAThresh != settings2.SWAThresh {
         ret = false
     }
+    if settings1.SWABypass != settings2.SWABypass {
+        ret = false
+    }
     if settings1.ResetVersion != settings2.ResetVersion {
         ret = false
     }
@@ -70,7 +74,7 @@ func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings)
 }
 
 func encodeESLOSettings(_ settings: ESLO_Settings) -> [UInt8] {
-    var rawSettings: Array<UInt8> = Array(repeating: 0, count: 16)
+    var rawSettings: Array<UInt8> = Array(repeating: 0, count: 17)
     rawSettings[0]  = settings.Record
     rawSettings[1]  = settings.RecPeriod
     rawSettings[2]  = settings.RecDuration
@@ -85,8 +89,9 @@ func encodeESLOSettings(_ settings: ESLO_Settings) -> [UInt8] {
     rawSettings[11] = settings.Time3
     rawSettings[12] = settings.Time4
     rawSettings[13] = settings.SWAThresh
-    rawSettings[14] = settings.ResetVersion
-    rawSettings[15] = settings.AdvLong
+    rawSettings[14] = settings.SWABypass
+    rawSettings[15] = settings.ResetVersion
+    rawSettings[16] = settings.AdvLong
     
     return rawSettings
 }
@@ -107,8 +112,9 @@ func decodeESLOSettings(_ settings: [UInt8]) -> ESLO_Settings {
     newSettings.Time3           = settings[11]
     newSettings.Time4           = settings[12]
     newSettings.SWAThresh       = settings[13]
-    newSettings.ResetVersion    = settings[14]
-    newSettings.AdvLong         = settings[15]
+    newSettings.SWABypass       = settings[14]
+    newSettings.ResetVersion    = settings[15]
+    newSettings.AdvLong         = settings[16]
     
     return newSettings
 }

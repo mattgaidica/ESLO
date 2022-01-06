@@ -388,7 +388,7 @@
                                         </connections>
                                     </segmentedControl>
                                     <slider opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" minValue="0.0" maxValue="100" translatesAutoresizingMaskIntoConstraints="NO" id="AaJ-zF-TBT">
-                                        <rect key="frame" x="-5" y="145" width="414" height="30"/>
+                                        <rect key="frame" x="-5" y="145" width="253" height="30"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <connections>
                                             <action selector="SWAThreshChanged:forEvent:" destination="BYZ-38-t0r" eventType="valueChanged" id="c28-9A-QhP"/>
@@ -402,7 +402,7 @@
                                         <nil key="highlightedColor"/>
                                     </label>
                                     <label opaque="NO" userInteractionEnabled="NO" alpha="0.55000001192092896" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="1.00e+12" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="AK7-Fa-9KJ">
-                                        <rect key="frame" x="301" y="133" width="104" height="18"/>
+                                        <rect key="frame" x="142" y="132" width="104" height="18"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="13"/>
                                         <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -412,6 +412,20 @@
                                         <rect key="frame" x="211" y="2" width="17" height="16"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                        <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="RHC-8d-nm6">
+                                        <rect key="frame" x="352" y="144" width="49" height="31"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <connections>
+                                            <action selector="SettingsChanged:" destination="BYZ-38-t0r" eventType="valueChanged" id="CeM-fH-uLr"/>
+                                        </connections>
+                                    </switch>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Bypass SWA" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="smj-qg-yNT">
+                                        <rect key="frame" x="260" y="150" width="87" height="18"/>
+                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                         <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <nil key="highlightedColor"/>
                                     </label>
@@ -509,6 +523,7 @@
                         <outlet property="RSSILabel" destination="9Ba-7t-tp2" id="vul-7l-hhj"/>
                         <outlet property="ResetButton" destination="Fj6-3p-1mX" id="ZeI-oD-hV9"/>
                         <outlet property="RmOffsetSwitch" destination="syR-50-Abl" id="Plp-Ll-7GY"/>
+                        <outlet property="SWABypassSwitch" destination="RHC-8d-nm6" id="lwc-dZ-S6t"/>
                         <outlet property="SWASwitch" destination="rbq-ZA-UFB" id="jpn-gJ-ZRi"/>
                         <outlet property="SWAThreshLabel" destination="AK7-Fa-9KJ" id="Ro7-uM-aIX"/>
                         <outlet property="SWAThreshSlider" destination="AaJ-zF-TBT" id="yGt-g7-UMD"/>

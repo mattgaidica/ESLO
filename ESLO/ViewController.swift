@@ -83,7 +83,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var AxyMoveLabel: UILabel!
     @IBOutlet weak var SWAThreshSlider: UISlider!
     @IBOutlet weak var SWAThreshLabel: UILabel!
-    
+    @IBOutlet weak var SWABypassSwitch: UISwitch!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -749,9 +749,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     data = LineChartData()
 
                     // +/-Vref = 3, gain = 12, 24-bit resolution
+                    // *5/3 empirically determined from input filters
                     var EEGfactor: Double = 1.0
                     if SciUnitsSwitch.isOn {
-                        EEGfactor = ((3/12) / Double(UInt32(0xFFFFFF))) * uVFactor
+                        EEGfactor = ((3/12) / Double(UInt32(0xFFFFFF))) * uVFactor * (5/3)
                     }
                     
                     if EEG1Switch.isOn {
@@ -885,6 +886,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         AxySwitch.selectedSegmentIndex = Int(iosSettings.AxyMode)
         SWASwitch.selectedSegmentIndex = Int(iosSettings.SWA)
         SWAThreshSlider.value = Float(iosSettings.SWAThresh);
+        SWABypassSwitch.isOn = iosSettings.SWABypass.boolValue
         AdvLongSwitch.isOn = iosSettings.AdvLong.boolValue
         updateSWAThreshLabel()
         updateSWASwitch()
@@ -899,6 +901,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         iosSettings.EEG4 = EEG4Switch.isOn.uint8Value
         iosSettings.SWA = UInt8(SWASwitch.selectedSegmentIndex)
         iosSettings.SWAThresh = UInt8(SWAThreshSlider.value)
+        iosSettings.SWABypass = SWABypassSwitch.isOn.uint8Value
         iosSettings.AxyMode = UInt8(AxySwitch.selectedSegmentIndex)
         iosSettings.AdvLong = AdvLongSwitch.isOn.uint8Value
         updateSWASwitch()
