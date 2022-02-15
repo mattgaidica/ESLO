@@ -946,7 +946,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     func updateSWAThreshLabel() {
         let sliderIdx = Int(SWAThreshSlider.value)
-        SWAThreshLabel.text = String(format: "%1.2e", 1e11 * Float(sliderIdx))
+        SWAThreshLabel.text = String(format: "%1.2e", 1e9 * Float(sliderIdx))
         SWAThreshSlider.value = Float(sliderIdx)
     }
     
