@@ -83,7 +83,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var AxyMoveLabel: UILabel!
     @IBOutlet weak var SWAThreshSlider: UISlider!
     @IBOutlet weak var SWAThreshLabel: UILabel!
-    @IBOutlet weak var SWABypassSwitch: UISwitch!
+    @IBOutlet weak var SWARatioLabel: UILabel!
+    @IBOutlet weak var SWARatioSlider: UISlider!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -140,7 +141,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var EEGnew4: Bool = false
     
     // States
-    let axyArr = [0,1,10]
+    let axyArr = [1,10]
     let dutyArr = [0, 1, 2, 4, 8, 12, 24] // hours
     let durationArr = [0, 1, 5, 10, 30, 60] // minutes
     var esloType: UInt8 = 0
@@ -628,99 +629,98 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     func updateChart(_ chartNum: Int){
         if chartNum == AXY_CHART || chartNum == BOTH_CHARTS {
-            if AxySwitch.selectedSegmentIndex > 0 {
-                if AXYnewX && AXYnewX && AXYnewX {
-                    data = LineChartData()
-                    lineChartEntry = [ChartDataEntry]()
-                    
-                    var multiXl: Double = 1.0
-                    var divideXl: Double = 1.0
-                    if SciUnitsSwitch.isOn {
-                        multiXl = 0.98
-                        divideXl = 16.0
-                    }
-                    let Fs = Double(axyArr[AxySwitch.selectedSegmentIndex])
-                    
-                    DCoffset = 0
-                    if RmOffsetSwitch.isOn {
-                        DCoffset = (AXYXPlot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
-                    }
-                    for i in 0..<AXYXPlot.count {
-                        let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYXPlot[i])-DCoffset)/divideXl)*multiXl)
-                        lineChartEntry.append(value)
-                    }
-                    let line1 = LineChartDataSet(entries: lineChartEntry, label: "Axy X")
-                    line1.colors = [AXYXColor]
-                    line1.drawCirclesEnabled = false
-                    line1.drawValuesEnabled = false
-                    data.addDataSet(line1)
-
-                    var lineChartEntry = [ChartDataEntry]()
-                    DCoffset = 0
-                    if RmOffsetSwitch.isOn {
-                        DCoffset = (AXYYPlot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
-                    }
-                    for i in 0..<AXYYPlot.count {
-                        let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYYPlot[i])-DCoffset)/divideXl)*multiXl)
-                        lineChartEntry.append(value)
-                    }
-
-                    let line2 = LineChartDataSet(entries: lineChartEntry, label: "Axy Y")
-                    line2.colors = [AXYYColor]
-                    line2.drawCirclesEnabled = false
-                    line2.drawValuesEnabled = false
-                    data.addDataSet(line2)
-
-                    lineChartEntry = [ChartDataEntry]()
-                    DCoffset = 0
-                    if RmOffsetSwitch.isOn {
-                        DCoffset = (AXYZPlot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
-                    }
-                    for i in 0..<AXYZPlot.count {
-                        let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYZPlot[i])-DCoffset)/divideXl)*multiXl)
-                        lineChartEntry.append(value)
-                    }
-
-                    let line3 = LineChartDataSet(entries: lineChartEntry, label: "Axy Z")
-                    line3.colors = [AXYZColor]
-                    line3.drawCirclesEnabled = false
-                    line3.drawValuesEnabled = false
-                    data.addDataSet(line3)
-
-                    let l = chartViewAxy.legend
-                    l.form = .line
-                    l.font = UIFont(name: "HelveticaNeue-Light", size: 11)!
-                    l.textColor = textColor
-                    l.horizontalAlignment = .left
-                    l.verticalAlignment = .bottom
-                    l.orientation = .horizontal
-                    l.drawInside = false
-                    
-                    let xAxis = chartViewAxy.xAxis
-                    xAxis.labelFont = .systemFont(ofSize: 11)
-                    xAxis.labelTextColor = textColor
-                    xAxis.drawAxisLineEnabled = true
-                    
-                    let leftAxis = chartViewAxy.leftAxis
-                    leftAxis.labelTextColor = textColor
-            //        leftAxis.axisMaximum = 55
-            //        leftAxis.axisMinimum = -5
-                    leftAxis.drawGridLinesEnabled = true
-                    leftAxis.granularityEnabled = false
-                    
-                    chartViewAxy.rightAxis.enabled = false
-                    chartViewAxy.legend.enabled = true
-                    
-                    chartViewAxy.chartDescription?.enabled = false
-                    chartViewAxy.dragEnabled = false
-                    chartViewAxy.setScaleEnabled(false)
-                    chartViewAxy.pinchZoomEnabled = false
-                    chartViewAxy.data = data // add and update
-                    
-                    AXYnewX = false
-                    AXYnewY = false
-                    AXYnewZ = false
+            // always plot Axy, always >= 1Hz
+            if AXYnewX && AXYnewY && AXYnewZ {
+                data = LineChartData()
+                lineChartEntry = [ChartDataEntry]()
+                
+                var multiXl: Double = 1.0
+                var divideXl: Double = 1.0
+                if SciUnitsSwitch.isOn {
+                    multiXl = 0.98
+                    divideXl = 16.0
                 }
+                let Fs = Double(axyArr[AxySwitch.selectedSegmentIndex])
+                
+                DCoffset = 0
+                if RmOffsetSwitch.isOn {
+                    DCoffset = (AXYXPlot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
+                }
+                for i in 0..<AXYXPlot.count {
+                    let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYXPlot[i])-DCoffset)/divideXl)*multiXl)
+                    lineChartEntry.append(value)
+                }
+                let line1 = LineChartDataSet(entries: lineChartEntry, label: "Axy X")
+                line1.colors = [AXYXColor]
+                line1.drawCirclesEnabled = false
+                line1.drawValuesEnabled = false
+                data.addDataSet(line1)
+
+                var lineChartEntry = [ChartDataEntry]()
+                DCoffset = 0
+                if RmOffsetSwitch.isOn {
+                    DCoffset = (AXYYPlot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
+                }
+                for i in 0..<AXYYPlot.count {
+                    let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYYPlot[i])-DCoffset)/divideXl)*multiXl)
+                    lineChartEntry.append(value)
+                }
+
+                let line2 = LineChartDataSet(entries: lineChartEntry, label: "Axy Y")
+                line2.colors = [AXYYColor]
+                line2.drawCirclesEnabled = false
+                line2.drawValuesEnabled = false
+                data.addDataSet(line2)
+
+                lineChartEntry = [ChartDataEntry]()
+                DCoffset = 0
+                if RmOffsetSwitch.isOn {
+                    DCoffset = (AXYZPlot as NSArray).value(forKeyPath: "@avg.floatValue") as! Double
+                }
+                for i in 0..<AXYZPlot.count {
+                    let value = ChartDataEntry(x: Double(i) / Fs, y: ((Double(AXYZPlot[i])-DCoffset)/divideXl)*multiXl)
+                    lineChartEntry.append(value)
+                }
+
+                let line3 = LineChartDataSet(entries: lineChartEntry, label: "Axy Z")
+                line3.colors = [AXYZColor]
+                line3.drawCirclesEnabled = false
+                line3.drawValuesEnabled = false
+                data.addDataSet(line3)
+
+                let l = chartViewAxy.legend
+                l.form = .line
+                l.font = UIFont(name: "HelveticaNeue-Light", size: 11)!
+                l.textColor = textColor
+                l.horizontalAlignment = .left
+                l.verticalAlignment = .bottom
+                l.orientation = .horizontal
+                l.drawInside = false
+                
+                let xAxis = chartViewAxy.xAxis
+                xAxis.labelFont = .systemFont(ofSize: 11)
+                xAxis.labelTextColor = textColor
+                xAxis.drawAxisLineEnabled = true
+                
+                let leftAxis = chartViewAxy.leftAxis
+                leftAxis.labelTextColor = textColor
+        //        leftAxis.axisMaximum = 55
+        //        leftAxis.axisMinimum = -5
+                leftAxis.drawGridLinesEnabled = true
+                leftAxis.granularityEnabled = false
+                
+                chartViewAxy.rightAxis.enabled = false
+                chartViewAxy.legend.enabled = true
+                
+                chartViewAxy.chartDescription?.enabled = false
+                chartViewAxy.dragEnabled = false
+                chartViewAxy.setScaleEnabled(false)
+                chartViewAxy.pinchZoomEnabled = false
+                chartViewAxy.data = data // add and update
+                
+                AXYnewX = false
+                AXYnewY = false
+                AXYnewZ = false
             } else {
                 chartViewAxy.data = nil
             }
@@ -886,7 +886,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         AxySwitch.selectedSegmentIndex = Int(iosSettings.AxyMode)
         SWASwitch.selectedSegmentIndex = Int(iosSettings.SWA)
         SWAThreshSlider.value = Float(iosSettings.SWAThresh);
-        SWABypassSwitch.isOn = iosSettings.SWABypass.boolValue
+        SWARatioSlider.value = Float(iosSettings.SWARatio);
         AdvLongSwitch.isOn = iosSettings.AdvLong.boolValue
         updateSWAThreshLabel()
         updateSWASwitch()
@@ -900,8 +900,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         iosSettings.EEG3 = EEG3Switch.isOn.uint8Value
         iosSettings.EEG4 = EEG4Switch.isOn.uint8Value
         iosSettings.SWA = UInt8(SWASwitch.selectedSegmentIndex)
+        if UInt8(SWASwitch.selectedSegmentIndex) > 0 {
+            AxySwitch.selectedSegmentIndex = 0 // force Axy 1Hz in SWA
+        }
         iosSettings.SWAThresh = UInt8(SWAThreshSlider.value)
-        iosSettings.SWABypass = SWABypassSwitch.isOn.uint8Value
+        iosSettings.SWARatio = UInt8(SWARatioSlider.value)
         iosSettings.AxyMode = UInt8(AxySwitch.selectedSegmentIndex)
         iosSettings.AdvLong = AdvLongSwitch.isOn.uint8Value
         updateSWASwitch()
@@ -946,8 +949,25 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     func updateSWAThreshLabel() {
         let sliderIdx = Int(SWAThreshSlider.value)
-        SWAThreshLabel.text = String(format: "%1.2e", 1e9 * Float(sliderIdx))
+        SWAThreshLabel.text = String(format: "%1.0fµV", Float(sliderIdx))
         SWAThreshSlider.value = Float(sliderIdx)
+    }
+    @IBAction func SWARatioChanged(_ sender: Any, forEvent event: UIEvent) {
+        if let touchEvent = event.allTouches?.first {
+            switch touchEvent.phase {
+                case .moved:
+                    updateSWARatioLabel()
+                case .ended:
+                    SettingsChanged(sender)
+                default:
+                    break
+            }
+        }
+    }
+    func updateSWARatioLabel() {
+        let sliderIdx = Int(SWARatioSlider.value)
+        SWARatioLabel.text = String(format: "%1.0f", Float(sliderIdx))
+        SWARatioSlider.value = Float(sliderIdx)
     }
     
     @IBAction func DutyChanged(_ sender: Any, forEvent event: UIEvent) {
