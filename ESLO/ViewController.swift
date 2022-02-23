@@ -85,6 +85,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var SWAThreshLabel: UILabel!
     @IBOutlet weak var SWARatioLabel: UILabel!
     @IBOutlet weak var SWARatioSlider: UISlider!
+    @IBOutlet weak var RecRatioLabel: UILabel!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -142,7 +143,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     
     // States
     let axyArr = [1,10]
-    let dutyArr = [0, 1, 2, 4, 8, 12, 24] // hours
+    let dutyArr = [0, 1, 5, 10, 30, 60] // minutes
     let durationArr = [0, 1, 5, 10, 30, 60] // minutes
     var esloType: UInt8 = 0
     let resetAlpha: CGFloat = 0.3
@@ -976,6 +977,20 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 case .moved:
                     updateDutyLabel()
                 case .ended:
+                    if Int(DutySlider.value) == 0 {
+                        DurationSlider.value = 0
+                    } else {
+                        SleepWakeSwitch.setOn(true, animated:true)
+                        if Int(DurationSlider.value) == 0 {
+                            DurationSlider.value = 1;
+                        } else {
+                            if Int(DutySlider.value) < Int(DurationSlider.value) {
+                                DurationSlider.value = DutySlider.value
+                            }
+                        }
+                    }
+                    updateDurationLabel()
+                    prependDurationLabel()
                     SettingsChanged(sender)
                 default:
                     break
@@ -984,7 +999,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
     func updateDutyLabel() {
         let sliderIdx = Int(DutySlider.value)
-        DutyLabel.text = String(dutyArr[sliderIdx]) + " hr"
+        DutyLabel.text = String(dutyArr[sliderIdx]) + " min"
         DutySlider.value = Float(sliderIdx)
     }
     
@@ -994,15 +1009,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 case .moved:
                     updateDurationLabel()
                 case .ended:
-                    if (Int(DurationSlider.value) == 0) {
+                    if Int(DurationSlider.value) == 0 {
                         DutySlider.value = 0
-                        updateDutyLabel()
                     } else {
-                        if (DutySlider.value == 0) {
-                            DutySlider.value = 1
-                            updateDutyLabel()
-                        }
+                        SleepWakeSwitch.setOn(true, animated:true)
                     }
+                    if Int(DutySlider.value) < Int(DurationSlider.value) {
+                        DutySlider.value = DurationSlider.value
+                    }
+                    updateDutyLabel()
+                    prependDurationLabel()
                     SettingsChanged(sender)
                 default:
                     break
@@ -1013,6 +1029,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         let sliderIdx = Int(DurationSlider.value)
         DurationLabel.text = String(durationArr[sliderIdx]) + " min"
         DurationSlider.value = Float(sliderIdx)
+    }
+    func prependDurationLabel() {
+        var preStr = ""
+        if Int(DurationSlider.value) == 0 || Int(DutySlider.value) == 0 {
+            preStr = "0"
+        } else {
+            let recRatio = Float(durationArr[Int(DurationSlider.value)]) / Float(dutyArr[Int(DutySlider.value)])
+            preStr = String(format: "%1.0f",100*recRatio)
+        }
+        RecRatioLabel.text = preStr;
     }
     
     @IBAction func ResetVersionButton(_ sender: Any) {
