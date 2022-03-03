@@ -889,7 +889,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         SWAThreshSlider.value = Float(iosSettings.SWAThresh);
         SWARatioSlider.value = Float(iosSettings.SWARatio);
         AdvLongSwitch.isOn = iosSettings.AdvLong.boolValue
+        
         updateSWAThreshLabel()
+        updateSWARatioLabel()
+        prependDurationLabel()
         updateSWASwitch()
     }
     @IBAction func SettingsChanged(_ sender: Any) { // triggered by most UI changes
@@ -989,8 +992,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             }
                         }
                     }
-                    updateDurationLabel()
-                    prependDurationLabel()
+//                    updateDurationLabel()
+//                    prependDurationLabel()
                     SettingsChanged(sender)
                 default:
                     break
@@ -1017,8 +1020,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     if Int(DutySlider.value) < Int(DurationSlider.value) {
                         DutySlider.value = DurationSlider.value
                     }
-                    updateDutyLabel()
-                    prependDurationLabel()
+//                    updateDutyLabel()
+//                    prependDurationLabel()
                     SettingsChanged(sender)
                 default:
                     break
