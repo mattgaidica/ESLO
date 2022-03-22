@@ -992,8 +992,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                             }
                         }
                     }
-//                    updateDurationLabel()
-//                    prependDurationLabel()
+                    updateDurationLabel()
+                    prependDurationLabel()
                     SettingsChanged(sender)
                 default:
                     break
@@ -1020,8 +1020,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                     if Int(DutySlider.value) < Int(DurationSlider.value) {
                         DutySlider.value = DurationSlider.value
                     }
-//                    updateDutyLabel()
-//                    prependDurationLabel()
+                    updateDutyLabel()
+                    prependDurationLabel()
                     SettingsChanged(sender)
                 default:
                     break
