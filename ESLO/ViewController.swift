@@ -86,6 +86,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     @IBOutlet weak var SWARatioLabel: UILabel!
     @IBOutlet weak var SWARatioSlider: UISlider!
     @IBOutlet weak var RecRatioLabel: UILabel!
+    @IBOutlet weak var WritePageButton: UIButton!
     
     // Characteristics
     private var LEDChar: CBCharacteristic?
@@ -1054,6 +1055,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             ResetButton.alpha = 1
         }
     }
+    
+    @IBAction func WritePageButton(_ sender: Any) {
+        iosSettings.WritePage = 0x01
+        PushSettings(false)
+        printESLO("Page written")
+    }
+    
     
     func updateSWASwitch() {
         if !EEG1Switch.isOn && SWASwitch.selectedSegmentIndex == 1 {

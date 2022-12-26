@@ -25,6 +25,7 @@ struct ESLO_Settings {
     var SWARatio        = UInt8(0)
     var ResetVersion    = UInt8(0)
     var AdvLong         = UInt8(0)
+    var WritePage       = UInt8(0)
 };
 
 func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings) -> Bool {
@@ -69,12 +70,15 @@ func compareESLOSettings(_ settings1: ESLO_Settings, _ settings2: ESLO_Settings)
     if settings1.AdvLong != settings2.AdvLong {
         ret = false
     }
+    if settings1.WritePage != settings2.WritePage {
+        ret = false
+    }
     
     return ret
 }
 
 func encodeESLOSettings(_ settings: ESLO_Settings) -> [UInt8] {
-    var rawSettings: Array<UInt8> = Array(repeating: 0, count: 17)
+    var rawSettings: Array<UInt8> = Array(repeating: 0, count: 18)
     rawSettings[0]  = settings.Record
     rawSettings[1]  = settings.RecPeriod
     rawSettings[2]  = settings.RecDuration
@@ -92,6 +96,7 @@ func encodeESLOSettings(_ settings: ESLO_Settings) -> [UInt8] {
     rawSettings[14] = settings.SWARatio
     rawSettings[15] = settings.ResetVersion
     rawSettings[16] = settings.AdvLong
+    rawSettings[17] = settings.WritePage
     
     return rawSettings
 }
@@ -115,6 +120,7 @@ func decodeESLOSettings(_ settings: [UInt8]) -> ESLO_Settings {
     newSettings.SWARatio        = settings[14]
     newSettings.ResetVersion    = settings[15]
     newSettings.AdvLong         = settings[16]
+    newSettings.WritePage       = settings[17]
     
     return newSettings
 }
